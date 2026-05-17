@@ -211,9 +211,11 @@
         <button class="secondary" onclick="mostrarInterno()">Ver controle interno</button>
         <button class="success" onclick="imprimirDocumento()">Imprimir / salvar PDF exibido</button>
         <button class="secondary" onclick="baixarDocumento(modo)">Gerar arquivos exibidos</button>
+        <button class="primary" onclick="enviarOrcamentoParaSheets()">Salvar orçamento na planilha</button>
       </div>
       <p class="small">Nome sugerido: <span id="nomeArquivoAtual">-</span></p>
       <p class="small">Orçamento atual: <span id="ultimoRegistroText">ainda não salvo</span></p>
+      <p class="small">Planilha: <span id="statusSheetsText">ainda não enviado</span></p>
       <div id="documento" class="preview-area"></div>
     </div>
   </section>
@@ -351,7 +353,7 @@ const STORAGE_ITENS_KEY = 'matriz_orcamento_itens_v4';
 const STORAGE_DB_KEY = 'matriz_orcamento_banco_local_v4';
 const STORAGE_FORM_KEY = 'matriz_orcamento_form_v4';
 const STORAGE_CONTROLE_TXT_KEY = 'matriz_orcamento_controle_txt_v1';
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUek_4ldbiGf6vnmdDwW3nboQRv9c0MY4ongynrFR8tChwoyfStNlKiWbNZlw7N_fx0Q/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyuouTFBRxM54fksKpREZ4zB0axO6ZrEJjA-mcAYPpws5vQAuM2Y-PPwTuzt8ilvnUSdA/exec";
 const RESERVA_OPERACIONAL_PERCENTUAL_PADRAO = 15;
 
 const schemas = {
@@ -528,14 +530,17 @@ function garantirOrcamentoAtual(){
   return true;
 }
 
-function nextStep(){
+async function nextStep(){
   // Na etapa de itens, o usuário costuma preencher os campos e clicar em "Próximo".
   // Por isso, registramos o rascunho automaticamente antes de abrir a matriz.
   if(currentStep === 1 && haRascunhoDeItem()){
     if(!adicionarItem(false)) return;
     return;
   }
-  if(currentStep === 3 && !garantirOrcamentoAtual()) return;
+  if(currentStep === 3){
+    if(!garantirOrcamentoAtual()) return;
+    await enviarOrcamentoParaSheets();
+  }
   setStep(currentStep + 1);
 }
 function prevStep(){ setStep(currentStep - 1); }
@@ -614,6 +619,11 @@ function setStatusOrcamentosRemotos(texto){
   if(el) el.textContent = texto;
 }
 
+function setStatusSheets(texto){
+  const el = $('statusSheetsText');
+  if(el) el.textContent = texto;
+}
+
 async function carregarOrcamentosRemotos(){
   setStatusOrcamentosRemotos('Carregando orçamentos da planilha...');
   const listaEl = $('listaOrcamentosRemotos');
@@ -685,6 +695,90 @@ function selecionarOrcamentoRemoto(indiceFiltrado){
   atualizarTextoRegistroAtual(`Orçamento selecionado para fechamento: ${orcamentoAtualId || 'sem ID'}`);
   setStatusOrcamentosRemotos(`Orçamento selecionado para fechamento: ${orcamentoAtualId || 'sem ID'}`);
   renderizar();
+}
+
+function montarPayloadOrcamentoSheets(){
+  const d = dadosCabecalho();
+  const t = totais();
+  const cond = condicoesComerciais(t);
+  return {
+    acao:'salvar_orcamento',
+    orcamento:{
+      id_orcamento:orcamentoAtualId,
+      data_orcamento:d.dataIso,
+      semana:semanaISO(d.dataIso),
+      mes:d.dataIso.slice(0,7),
+      cliente:d.cliente,
+      contato:d.contatoCliente,
+      status:d.statusOrcamento,
+      data_contratacao:d.dataContratacao,
+      total_bruto:t.totalBruto,
+      desconto_valor:t.descontoTotal,
+      desconto_percentual:num('descontoPct'),
+      motivo_desconto:val('motivoDesconto'),
+      total_final:t.valorFinal,
+      custo_total:t.custoTotal,
+      reserva_operacional_percentual:t.reservaOperacionalPercentual,
+      reserva_operacional_valor:t.reservaOperacionalValor,
+      lucro_liquido:t.lucroLiquido,
+      margem_liquida:t.margemLiquida,
+      prazo_final:d.prazoFinal,
+      observacoes:d.obsCliente
+    },
+    itens:itens.map(item => {
+      const c = calcularItem(item);
+      return {
+        id_item:item.id_item || item.tmp_id || '',
+        id_orcamento:orcamentoAtualId,
+        produto:item.produto || '',
+        categoria:item.categoria || '',
+        quantidade:item.quantidade || '',
+        prazo:item.prazo || '',
+        fornecedor:item.fornecedor || '',
+        custo_fornecedor:Number(item.custo || 0),
+        preco_venda:Number(item.venda || 0),
+        desconto_item:Number(item.descontoItem || 0),
+        venda_liquida:c.vendaLiquida,
+        status_item:item.status || 'Orçamento',
+        observacao_interna:item.obsInterna || ''
+      };
+    }),
+    condicoes_comerciais:{
+      id_orcamento:orcamentoAtualId,
+      valor_entrada:cond.valor_entrada,
+      valor_entrada_base:cond.valor_entrada_base,
+      percentual_entrada:cond.percentual_entrada,
+      entrada_recebida:cond.entrada_recebida,
+      data_recebimento_entrada:cond.data_recebimento_entrada,
+      forma_pagamento:cond.forma_pagamento,
+      prazo_pagamento:cond.prazo_pagamento,
+      saldo_restante:cond.saldo_restante,
+      tipo_entrega:cond.tipo_entrega,
+      endereco_entrega:cond.endereco_entrega,
+      taxa_entrega:cond.taxa_entrega,
+      prazo_entrega:cond.prazo_entrega,
+      responsavel_entrega:cond.responsavel_entrega,
+      condicoes_especificas:cond.condicoes_especificas
+    }
+  };
+}
+
+async function enviarOrcamentoParaSheets(){
+  if(!garantirOrcamentoAtual()) return false;
+  setStatusSheets('Enviando orçamento para a planilha...');
+
+  try{
+    const resp = await fetch(APPS_SCRIPT_URL, {
+      method:'POST',
+      body:JSON.stringify(montarPayloadOrcamentoSheets())
+    });
+    if(!resp.ok) throw new Error('Falha no envio para o Apps Script');
+    setStatusSheets('Orçamento enviado para a planilha');
+    return true;
+  }catch(e){
+    setStatusSheets('Não foi possível enviar para a planilha. Os dados seguem salvos localmente.');
+    return false;
+  }
 }
 
 function salvarItens(){
