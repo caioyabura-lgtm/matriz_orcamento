@@ -353,7 +353,7 @@ const STORAGE_ITENS_KEY = 'matriz_orcamento_itens_v4';
 const STORAGE_DB_KEY = 'matriz_orcamento_banco_local_v4';
 const STORAGE_FORM_KEY = 'matriz_orcamento_form_v4';
 const STORAGE_CONTROLE_TXT_KEY = 'matriz_orcamento_controle_txt_v1';
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztPfUqAYCYFgFOBJn0O5nUjgXwbC9_r-34zd7U6HV6N_iUesJN8lpixFVgyst9DetMHQ/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz5l4sdbfaiQcJVCahFHI2xWU-bDk04R2JK5KEd7pkrjAvrBNfV1hGGzOcl4Fy9i_Hqkg/exec";
 const RESERVA_OPERACIONAL_PERCENTUAL_PADRAO = 15;
 
 const schemas = {
@@ -793,20 +793,28 @@ async function enviarOrcamentoParaSheets(){
       throw new Error(`APPS_SCRIPT_URL deve terminar com /exec. URL atual: ${urlUsada}`);
     }
 
+    const formData = new URLSearchParams();
+    formData.append('payload', JSON.stringify(payload));
+
     const resp = await fetch(urlUsada, {
       method:'POST',
-      body:JSON.stringify(payload)
+      body:formData
     });
     const respostaTexto = await resp.text();
-    console.log('Resposta do Apps Script:', {
+    console.log('Resposta Apps Script:', respostaTexto);
+    console.log('Resposta recebida do Apps Script:', {
       ok:resp.ok,
       status:resp.status,
       statusText:resp.statusText,
       body:respostaTexto
     });
 
-    let respostaJson = null;
-    try{ respostaJson = JSON.parse(respostaTexto); }catch(e){}
+    let respostaJson = {};
+    try{
+      respostaJson = JSON.parse(respostaTexto);
+    }catch(e){
+      console.error('Erro parse JSON:', e);
+    }
     if(!resp.ok || respostaJson?.ok === false || respostaJson?.erro){
       const detalhe = respostaJson?.erro || respostaJson?.message || respostaTexto || resp.statusText;
       throw new Error(`HTTP ${resp.status}: ${detalhe}`);
