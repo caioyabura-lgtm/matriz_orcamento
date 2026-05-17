@@ -595,7 +595,7 @@ function textoOrcamentoRemoto(o, campos){
 function normalizarOrcamentoRemoto(o){
   return {
     ...o,
-    id_orcamento: o?.id_orcamento ?? o?.id ?? '',
+    id_orcamento: o?.id_orcamento ?? o?.orcamento ?? o?.id ?? '',
     cliente: o?.cliente ?? o?.nome_cliente ?? '',
     contato: o?.contato ?? o?.telefone ?? o?.contatoCliente ?? '',
     data_orcamento: dataISOEntrada(o?.data_orcamento ?? o?.data ?? ''),
@@ -701,10 +701,14 @@ function montarPayloadOrcamentoSheets(){
   const d = dadosCabecalho();
   const t = totais();
   const cond = condicoesComerciais(t);
+  const idOrcamento = orcamentoAtualId;
   return {
     acao:'salvar_orcamento',
     orcamento:{
-      id_orcamento:orcamentoAtualId,
+      id:idOrcamento,
+      orcamento:idOrcamento,
+      id_orcamento:idOrcamento,
+      data:d.dataIso,
       data_orcamento:d.dataIso,
       semana:semanaISO(d.dataIso),
       mes:d.dataIso.slice(0,7),
@@ -727,14 +731,18 @@ function montarPayloadOrcamentoSheets(){
     },
     itens:itens.map(item => {
       const c = calcularItem(item);
+      const idItem = item.id_item || item.tmp_id || '';
       return {
-        id_item:item.id_item || item.tmp_id || '',
-        id_orcamento:orcamentoAtualId,
+        id:idItem,
+        item:idItem,
+        id_item:idItem,
+        id_orcamento:idOrcamento,
         produto:item.produto || '',
         categoria:item.categoria || '',
         quantidade:item.quantidade || '',
         prazo:item.prazo || '',
         fornecedor:item.fornecedor || '',
+        custo:Number(item.custo || 0),
         custo_fornecedor:Number(item.custo || 0),
         preco_venda:Number(item.venda || 0),
         desconto_item:Number(item.descontoItem || 0),
@@ -744,7 +752,8 @@ function montarPayloadOrcamentoSheets(){
       };
     }),
     condicoes_comerciais:{
-      id_orcamento:orcamentoAtualId,
+      id_condicao:`COND_${idOrcamento}`,
+      id_orcamento:idOrcamento,
       valor_entrada:cond.valor_entrada,
       valor_entrada_base:cond.valor_entrada_base,
       percentual_entrada:cond.percentual_entrada,
@@ -752,13 +761,21 @@ function montarPayloadOrcamentoSheets(){
       data_recebimento_entrada:cond.data_recebimento_entrada,
       forma_pagamento:cond.forma_pagamento,
       prazo_pagamento:cond.prazo_pagamento,
+      quantidade_parcelas:'',
+      valor_parcela:'',
       saldo_restante:cond.saldo_restante,
       tipo_entrega:cond.tipo_entrega,
       endereco_entrega:cond.endereco_entrega,
       taxa_entrega:cond.taxa_entrega,
       prazo_entrega:cond.prazo_entrega,
       responsavel_entrega:cond.responsavel_entrega,
-      condicoes_especificas:cond.condicoes_especificas
+      ',responsavel_entrega':cond.responsavel_entrega,
+      condicoes_especificas:cond.condicoes_especificas,
+      garantianecessita_aprovacao_arte:'',
+      data_prevista_producao:'',
+      data_prevista_entrega:'',
+      data_fechamento:d.dataContratacao,
+      coluna_22:''
     }
   };
 }
@@ -1653,8 +1670,14 @@ async function gerarOrdemServico(){
 
 async function baixarDocumento(tipo){
   if(!garantirOrcamentoAtualParaArquivos()) return;
-  const arquivos = tipo === 'interno' ? arquivosControleInternoDossie() : arquivosOrcamentoCliente();
-  await salvarOuBaixarArquivosOrcamento(arquivos, tipo === 'interno' ? 'Controle interno gerado com sucesso.' : 'Orçamento do cliente gerado com sucesso.');
+  const pacoteOs = arquivosOrdemServico();
+  if(!pacoteOs) return;
+  const arquivos = [
+    ...arquivosOrcamentoCliente(),
+    ...arquivosControleInternoDossie(),
+    ...pacoteOs.arquivos
+  ];
+  await salvarOuBaixarArquivosOrcamento(arquivos, 'Dossiê do orçamento gerado com sucesso.');
 }
 
 function imprimirDocumento(){
