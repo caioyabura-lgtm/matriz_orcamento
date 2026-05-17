@@ -72,9 +72,13 @@
     .conditional-box.active{display:block}
     .check-line{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--green-black);margin:8px 0}
     .check-line input{width:auto;margin-top:2px}
+    .remote-results{display:grid;gap:8px;margin-top:10px}
+    .remote-result{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px}
+    .remote-result strong{display:block;margin-bottom:4px}
+    .remote-result-meta{font-size:12px;color:var(--muted);line-height:1.45}
     @media(max-width:900px){.dashboard-grid,.summary-grid{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:820px){.grid,.row-3,.row-4,.doc-info{grid-template-columns:1fr}}
-    @media(max-width:560px){main{padding:12px}.dashboard-grid,.summary-grid{grid-template-columns:1fr}.steps-nav{flex-wrap:nowrap;overflow-x:auto}.steps-nav button{flex:0 0 150px}}
+    @media(max-width:560px){main{padding:12px}.dashboard-grid,.summary-grid{grid-template-columns:1fr}.steps-nav{flex-wrap:nowrap;overflow-x:auto}.steps-nav button{flex:0 0 150px}.remote-result{grid-template-columns:1fr}.remote-result button{width:100%}}
     @media print{
       body{background:#fff!important}
       body *{visibility:hidden!important}
@@ -218,6 +222,15 @@
     <div class="card">
       <div class="step-indicator">Registre aprovação, pagamento e entrega depois da negociação concluída.</div>
       <h2>5. Fechamento</h2>
+      <div class="muted-box">
+        <h3>Selecionar orçamento para fechamento</h3>
+        <div class="grid">
+          <div><label>Buscar orçamento</label><input id="buscaOrcamentoRemoto" placeholder="Buscar por ID, cliente, contato ou status"></div>
+          <div class="actions"><button class="primary" onclick="carregarOrcamentosRemotos()">Carregar orçamentos</button></div>
+        </div>
+        <p class="small" id="statusOrcamentosRemotos">Nenhum orçamento carregado da planilha.</p>
+        <div id="listaOrcamentosRemotos" class="remote-results"></div>
+      </div>
       <div class="grid">
         <div><label>Status do orçamento</label><select id="statusOrcamento"><option>Orçamento</option><option>Pagamento</option><option>Produção</option><option>Entrega</option><option>Faturamento</option><option>Cancelado</option></select></div>
         <div><label>Data de contratação</label><input id="dataContratacao" type="date"></div>
@@ -331,6 +344,7 @@ const STORAGE_ITENS_KEY = 'matriz_orcamento_itens_v4';
 const STORAGE_DB_KEY = 'matriz_orcamento_banco_local_v4';
 const STORAGE_FORM_KEY = 'matriz_orcamento_form_v4';
 const STORAGE_CONTROLE_TXT_KEY = 'matriz_orcamento_controle_txt_v1';
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUek_4ldbiGf6vnmdDwW3nboQRv9c0MY4ongynrFR8tChwoyfStNlKiWbNZlw7N_fx0Q/exec";
 
 const schemas = {
   orcamentos: ['id_orcamento','data_orcamento','semana','mes','cliente','contato','status','data_contratacao','dias_ate_contratacao','total_bruto','desconto_valor','desconto_percentual','motivo_desconto','total_final','custo_total','impostos_total','lucro_liquido','margem_liquida','prazo_final','valor_entrada','percentual_entrada','entrada_recebida','data_recebimento_entrada','forma_pagamento','prazo_pagamento','saldo_restante','tipo_entrega','endereco_entrega','taxa_entrega','prazo_entrega','responsavel_entrega','condicoes_especificas','observacoes'],
@@ -351,6 +365,7 @@ let banco = {
 let controleInternoTxt = {};
 let pastaControleHandle = null;
 let pastaOrdemServicoHandle = null;
+let orcamentosRemotos = [];
 
 const camposPersistentes = [
   'emissorNome','emissorCnpj','emissorPix','emissorTelefone','cliente','contatoCliente','data','dataContratacao',
@@ -374,9 +389,40 @@ function num(id){
   return Number.isFinite(valor) ? valor : 0;
 }
 
+function numeroValor(valor){
+  const bruto = String(valor ?? '').trim();
+  if(!bruto) return 0;
+  const limpo = bruto.replace(/[^\d,.-]/g,'');
+  const normalizado = limpo.includes(',')
+    ? limpo.replace(/\./g,'').replace(',','.')
+    : limpo;
+  const numero = Number(normalizado);
+  return Number.isFinite(numero) ? numero : 0;
+}
+
 function setValorCampo(id, valor){
   const el = $(id);
   if(el) el.value = valor ?? '';
+}
+
+function setSelectValor(id, valor){
+  const el = $(id);
+  if(!el) return;
+  const texto = String(valor ?? '');
+  if(texto && !Array.from(el.options).some(op => op.value === texto)){
+    el.add(new Option(texto, texto));
+  }
+  el.value = texto;
+}
+
+function dataISOEntrada(valor){
+  const texto = String(valor ?? '').trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(texto)) return texto.slice(0,10);
+  if(/^\d{2}\/\d{2}\/\d{4}$/.test(texto)){
+    const [dia, mes, ano] = texto.split('/');
+    return `${ano}-${mes}-${dia}`;
+  }
+  return texto;
 }
 
 function escapeHtml(v){
@@ -497,6 +543,111 @@ function ativarPersistencia(){
   $('fornecedor')?.addEventListener('input', atualizarBlocoZap);
   $('fornecedor')?.addEventListener('change', atualizarBlocoZap);
   $('incluirArteZap')?.addEventListener('change', salvarFormulario);
+  $('buscaOrcamentoRemoto')?.addEventListener('input', renderizarOrcamentosRemotos);
+}
+
+function textoOrcamentoRemoto(o, campos){
+  return campos.map(campo => String(o?.[campo] ?? '')).join(' ');
+}
+
+function normalizarOrcamentoRemoto(o){
+  return {
+    ...o,
+    id_orcamento: o?.id_orcamento ?? o?.id ?? '',
+    cliente: o?.cliente ?? o?.nome_cliente ?? '',
+    contato: o?.contato ?? o?.telefone ?? o?.contatoCliente ?? '',
+    data_orcamento: dataISOEntrada(o?.data_orcamento ?? o?.data ?? ''),
+    status: o?.status ?? o?.status_orcamento ?? '',
+    total_final: numeroValor(o?.total_final ?? o?.valor_final ?? o?.total ?? 0)
+  };
+}
+
+function extrairListaOrcamentosRemotos(resposta){
+  if(Array.isArray(resposta)) return resposta;
+  if(Array.isArray(resposta?.orcamentos)) return resposta.orcamentos;
+  if(Array.isArray(resposta?.dados)) return resposta.dados;
+  if(Array.isArray(resposta?.dados?.orcamentos)) return resposta.dados.orcamentos;
+  if(Array.isArray(resposta?.data)) return resposta.data;
+  if(Array.isArray(resposta?.resultado)) return resposta.resultado;
+  return [];
+}
+
+function setStatusOrcamentosRemotos(texto){
+  const el = $('statusOrcamentosRemotos');
+  if(el) el.textContent = texto;
+}
+
+async function carregarOrcamentosRemotos(){
+  setStatusOrcamentosRemotos('Carregando orçamentos da planilha...');
+  const listaEl = $('listaOrcamentosRemotos');
+  if(listaEl) listaEl.innerHTML = '';
+
+  try{
+    const resp = await fetch(`${APPS_SCRIPT_URL}?acao=listar_orcamentos`);
+    if(!resp.ok) throw new Error('Resposta inválida da planilha');
+    const json = await resp.json();
+    orcamentosRemotos = extrairListaOrcamentosRemotos(json).map(normalizarOrcamentoRemoto);
+    renderizarOrcamentosRemotos();
+  }catch(e){
+    orcamentosRemotos = [];
+    if(listaEl) listaEl.innerHTML = '';
+    setStatusOrcamentosRemotos('Não foi possível carregar os orçamentos da planilha. Você ainda pode preencher manualmente.');
+  }
+}
+
+function renderizarOrcamentosRemotos(){
+  const listaEl = $('listaOrcamentosRemotos');
+  if(!listaEl) return;
+
+  const termo = normalizar(val('buscaOrcamentoRemoto'));
+  const filtrados = orcamentosRemotos.filter(o => {
+    if(!termo) return true;
+    return normalizar(textoOrcamentoRemoto(o, ['id_orcamento','cliente','contato','status'])).includes(termo);
+  });
+
+  if(!orcamentosRemotos.length){
+    listaEl.innerHTML = '';
+    setStatusOrcamentosRemotos('Nenhum orçamento carregado da planilha.');
+    return;
+  }
+
+  setStatusOrcamentosRemotos(`${filtrados.length} orçamento(s) encontrado(s) na planilha.`);
+  if(!filtrados.length){
+    listaEl.innerHTML = '<p class="small">Nenhum orçamento encontrado para a busca.</p>';
+    return;
+  }
+
+  listaEl.innerHTML = filtrados.map((o, i) => `<div class="remote-result">
+    <div>
+      <strong>${escapeHtml(o.id_orcamento || '-')} — ${escapeHtml(o.cliente || '-')}</strong>
+      <div class="remote-result-meta">
+        Data: ${escapeHtml(dataBR(o.data_orcamento) || o.data_orcamento || '-')} |
+        Status: ${escapeHtml(o.status || '-')} |
+        Total: ${moeda(o.total_final)}
+      </div>
+    </div>
+    <button class="secondary" onclick="selecionarOrcamentoRemoto(${i})">Selecionar para fechamento</button>
+  </div>`).join('');
+}
+
+function selecionarOrcamentoRemoto(indiceFiltrado){
+  const termo = normalizar(val('buscaOrcamentoRemoto'));
+  const filtrados = orcamentosRemotos.filter(o => {
+    if(!termo) return true;
+    return normalizar(textoOrcamentoRemoto(o, ['id_orcamento','cliente','contato','status'])).includes(termo);
+  });
+  const orcamento = filtrados[indiceFiltrado];
+  if(!orcamento) return;
+
+  orcamentoAtualId = orcamento.id_orcamento || '';
+  setValorCampo('cliente', orcamento.cliente || '');
+  setValorCampo('contatoCliente', orcamento.contato || '');
+  if(orcamento.data_orcamento) setValorCampo('data', orcamento.data_orcamento);
+  if(orcamento.status) setSelectValor('statusOrcamento', orcamento.status);
+  salvarFormulario();
+  atualizarTextoRegistroAtual(`Orçamento selecionado para fechamento: ${orcamentoAtualId || 'sem ID'}`);
+  setStatusOrcamentosRemotos(`Orçamento selecionado para fechamento: ${orcamentoAtualId || 'sem ID'}`);
+  renderizar();
 }
 
 function salvarItens(){
