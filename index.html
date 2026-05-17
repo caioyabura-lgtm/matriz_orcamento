@@ -9,11 +9,12 @@
       --bg:#f4f1ed;--card:#fff;--text:#1f211f;--muted:#5f6f5b;--line:rgba(132,118,108,.35);
       --dark:#1f211f;--green-light:#91b488;--green-dark:#5f6f5b;--green-black:#444b42;
       --bluegreen:#668882;--beige:#d6b7a1;--rose:#cd9ba1;--warning:#fff4d6;
+      --apore-ink:#1f211f;--apore-moss:#5f6f5b;--apore-sage:#91b488;--apore-clay:#d6b7a1;--apore-blue:#668882;
       --danger-soft:#ffe6e6;--ok-soft:#e6f4ea
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
-    header{background:var(--dark);color:#fff;padding:18px 28px}
+    header{background:var(--dark);color:#fff;padding:18px 28px;border-bottom:3px solid var(--apore-clay)}
     header h1{margin:0 0 4px;font-size:22px}
     header p{margin:0;font-size:13px;color:#e6e0db}
     main{max-width:1180px;margin:0 auto;padding:22px}
@@ -43,7 +44,7 @@
     .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
     button{border:0;border-radius:8px;padding:10px 14px;cursor:pointer;font-weight:bold;font-size:13px}
     button:disabled{opacity:.45;cursor:not-allowed}
-    .primary{background:var(--green-dark);color:#fff}
+    .primary{background:var(--apore-moss);color:#fff}
     .secondary{background:var(--beige);color:var(--dark)}
     .success{background:var(--bluegreen);color:#fff}
     .danger{background:var(--rose);color:var(--dark)}
@@ -77,6 +78,22 @@
     .remote-result{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px}
     .remote-result strong{display:block;margin-bottom:4px}
     .remote-result-meta{font-size:12px;color:var(--muted);line-height:1.45}
+    .brand-header{display:flex;align-items:center;gap:12px}
+    .brand-header.panel{justify-content:flex-start}
+    .brand-header.dashboard{justify-content:space-between;margin-bottom:14px;opacity:.82}
+    .brand-header.print{justify-content:center;flex-direction:column;gap:6px;margin-bottom:14px}
+    .brand-header.compact{gap:8px}
+    .brand-logo{display:block;object-fit:contain;max-width:100%;height:auto}
+    .brand-logo.compact{width:54px;max-height:34px}
+    .brand-logo.panel{width:78px;max-height:48px}
+    .brand-logo.dashboard{width:70px;max-height:44px}
+    .brand-logo.print{width:82px;max-height:50px}
+    .brand-copy h1,.brand-copy h2,.brand-copy h3{margin:0;color:inherit;letter-spacing:0}
+    .brand-copy p{margin:4px 0 0;color:inherit;font-size:12px;opacity:.82}
+    .brand-header.dashboard .brand-copy{color:var(--apore-ink)}
+    .brand-header.dashboard .brand-copy p{color:var(--muted)}
+    .brand-footer{margin-top:22px;padding-top:10px;border-top:1px solid var(--line);text-align:center;color:var(--muted);font-size:11px}
+    .brand-footer img{width:48px;max-height:30px;object-fit:contain;opacity:.78;margin-bottom:4px}
     @media(max-width:900px){.dashboard-grid,.summary-grid{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:820px){.grid,.row-3,.row-4,.doc-info{grid-template-columns:1fr}}
     @media(max-width:560px){main{padding:12px}.dashboard-grid,.summary-grid{grid-template-columns:1fr}.steps-nav{flex-wrap:nowrap;overflow-x:auto}.steps-nav button{flex:0 0 150px}.remote-result{grid-template-columns:1fr}.remote-result button{width:100%}}
@@ -90,14 +107,18 @@
       #printDocument th{background:#444b42!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
       #printDocument td,#printDocument th{border:1px solid #999!important;padding:6px!important}
       #printDocument .doc-total{background:#f7efe5!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      #printDocument .brand-logo.print{width:70px!important}
+      #printDocument .brand-footer{border-top:1px solid #bbb!important;color:#555!important}
       @page{size:A4;margin:12mm}
     }
   </style>
 </head>
 <body>
 <header class="no-print">
-  <h1>Matriz de Orçamento — Artes Gráficas</h1>
-  <p>Sistema offline: orçamento, controle interno, banco local, exportação e dashboard.</p>
+  <div id="appBrandHeader">
+    <h1>Matriz de Orçamento — Artes Gráficas</h1>
+    <p>Sistema offline: orçamento, controle interno, banco local, exportação e dashboard.</p>
+  </div>
 </header>
 
 <main class="no-print">
@@ -146,7 +167,7 @@
         <div><label>Produto</label><input id="produto" placeholder="Ex: Mini Cartão Couchê 250g UV"></div>
         <div><label>Categoria</label><input id="categoria" placeholder="Ex: Impresso, design, entrega"></div>
         <div><label>Quantidade</label><input id="quantidade" placeholder="Ex: 500 unidades"></div>
-        <div><label>Prazo</label><input id="prazo" placeholder="Ex: 2 dias úteis"></div>
+        <div><label>Prazo fornecedor (dias úteis)</label><input id="prazo" placeholder="Ex: 5"></div>
       </div>
       <div class="row-4">
         <div><label>Status</label><select id="status"><option>Orçamento</option><option>Pagamento</option><option>Produção</option><option>Entrega</option><option>Faturamento</option></select></div>
@@ -194,7 +215,7 @@
         <div><label>Reserva operacional (%)</label><input id="reservaOperacionalPct" type="text" inputmode="decimal" value="15"></div>
       </div>
       <div class="grid">
-        <div><label>Prazo final</label><input id="prazoFinal" placeholder="Ex: 7 dias úteis"></div>
+        <div><label>Prazo final (ajuste manual opcional)</label><input id="prazoFinal" placeholder="Ex: 14 dias úteis"></div>
         <div><label>Observação para o cliente</label><textarea id="obsCliente" placeholder="Ex: pagamento de 50% na aprovação, saldo na entrega..."></textarea></div>
       </div>
       <div class="summary-grid">
@@ -228,7 +249,7 @@
       <div class="muted-box">
         <h3>Selecionar orçamento para fechamento</h3>
         <div class="grid">
-          <div><label>Buscar orçamento</label><input id="buscaOrcamentoRemoto" placeholder="Buscar por ID, cliente, contato ou status"></div>
+          <div><label>Buscar orçamento</label><input id="buscaOrcamentoRemoto" placeholder="Buscar por código, cliente, contato ou status"></div>
           <div class="actions"><button class="primary" onclick="carregarOrcamentosRemotos()">Carregar orçamentos</button></div>
         </div>
         <p class="small" id="statusOrcamentosRemotos">Nenhum orçamento carregado da planilha.</p>
@@ -297,6 +318,7 @@
 
   <section id="dashboardPage" class="app-page">
   <div class="card">
+    <div id="dashboardBrand"></div>
     <h2>Dashboard offline</h2>
     <p class="small" id="bancoStatusText">Banco local carregado no navegador.</p>
     <div class="dashboard-grid">
@@ -355,7 +377,17 @@ const STORAGE_DB_KEY = 'matriz_orcamento_banco_local_v4';
 const STORAGE_FORM_KEY = 'matriz_orcamento_form_v4';
 const STORAGE_CONTROLE_TXT_KEY = 'matriz_orcamento_controle_txt_v1';
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz5l4sdbfaiQcJVCahFHI2xWU-bDk04R2JK5KEd7pkrjAvrBNfV1hGGzOcl4Fy9i_Hqkg/exec";
+const LOGO_APORE_SRC = 'logo_apore.png';
 const RESERVA_OPERACIONAL_PERCENTUAL_PADRAO = 15;
+const PREFIXOS_DOCUMENTOS = {
+  orcamento:'ORC',
+  controle:'ORC',
+  os:'OS',
+  nf:'NF',
+  arte:'ART',
+  aprovacao:'APV',
+  backup:'BKP'
+};
 
 const schemas = {
   orcamentos: ['id_orcamento','data_orcamento','semana','mes','cliente','contato','status','data_contratacao','dias_ate_contratacao','total_bruto','desconto_valor','desconto_percentual','motivo_desconto','total_final','custo_total','reserva_operacional_percentual','reserva_operacional_valor','lucro_liquido','margem_liquida','prazo_final','valor_entrada','percentual_entrada','entrada_recebida','data_recebimento_entrada','forma_pagamento','prazo_pagamento','saldo_restante','tipo_entrega','endereco_entrega','taxa_entrega','prazo_entrega','responsavel_entrega','condicoes_especificas','observacoes'],
@@ -397,6 +429,57 @@ const camposPersistentes = [
 const $ = id => document.getElementById(id);
 const moeda = n => Number(n || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const val = id => $(id)?.value || '';
+
+function LogoApore(variacao = 'compact'){
+  return `<img class="brand-logo ${escapeHtml(variacao)}" src="${escapeHtml(LOGO_APORE_SRC)}" alt="APORÉ imagem e som" onerror="this.style.display='none'">`;
+}
+
+function BrandHeader({titulo = '', subtitulo = '', variacao = 'compact'} = {}){
+  return `<div class="brand-header ${escapeHtml(variacao)}">
+    ${LogoApore(variacao)}
+    <div class="brand-copy">
+      ${titulo ? `<h2>${escapeHtml(titulo)}</h2>` : ''}
+      ${subtitulo ? `<p>${escapeHtml(subtitulo)}</p>` : ''}
+    </div>
+  </div>`;
+}
+
+function rodapeMarcaHtml(){
+  return `<div class="brand-footer">
+    ${LogoApore('compact')}
+    <div>APORÉ imagem e som<br>imagem • som • criação • produção</div>
+  </div>`;
+}
+
+function gerarAssinaturaAporeTxt(){
+  return [
+    '',
+    '────────────────────────────',
+    'APORÉ imagem e som',
+    'imagem • som • criação • produção',
+    '────────────────────────────',
+    ''
+  ].join('\n');
+}
+
+function renderizarMarcaInterface(){
+  const topo = $('appBrandHeader');
+  if(topo){
+    topo.innerHTML = BrandHeader({
+      titulo:'Matriz de Orçamento — Artes Gráficas',
+      subtitulo:'Sistema offline: orçamento, controle interno, banco local, exportação e dashboard.',
+      variacao:'panel'
+    });
+  }
+  const dash = $('dashboardBrand');
+  if(dash){
+    dash.innerHTML = BrandHeader({
+      titulo:'APORÉ imagem e som',
+      subtitulo:'imagem • som • criação • produção',
+      variacao:'dashboard'
+    });
+  }
+}
 
 function num(id){
   const bruto = String($(id)?.value || '').trim();
@@ -458,14 +541,51 @@ function dataBR(iso){
   return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
 }
 
-function gerarId(prefixo){
+function gerarIdInterno(prefixo){
   return `${prefixo}_${new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14)}_${Math.random().toString(36).slice(2,7).toUpperCase()}`;
 }
+
+// Mantem compatibilidade com IDs tecnicos antigos ja usados pelo banco local.
+function gerarId(prefixo){ return gerarIdInterno(prefixo); }
 
 function normalizar(txt){
   return String(txt || '')
     .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+}
+
+function normalizarNomeCliente(nome){
+  const limpo = String(nome || 'Cliente')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^\w\s-]/g,'')
+    .trim()
+    .replace(/\s+/g,'-')
+    .replace(/-+/g,'-');
+  return limpo || 'Cliente';
+}
+
+function numeroSequencialOrcamento(idOrcamento = orcamentoAtualId){
+  const id = String(idOrcamento || '').trim();
+  if(id){
+    const indice = banco.orcamentos.findIndex(o => o.id_orcamento === id);
+    if(indice >= 0) return indice + 1;
+  }
+  return banco.orcamentos.length + 1;
+}
+
+function gerarCodigoSequencial(prefixo = 'ORC', idOrcamento = orcamentoAtualId){
+  const numero = numeroSequencialOrcamento(idOrcamento);
+  return `${prefixo}${String(numero).padStart(3,'0')}`;
+}
+
+function gerarNomeHumanoArquivo({tipo = 'orcamento', extensao = 'pdf', cliente, data, idOrcamento = orcamentoAtualId, sufixo = ''} = {}){
+  const prefixo = PREFIXOS_DOCUMENTOS[tipo] || String(tipo || 'DOC').toUpperCase().slice(0,3);
+  const dataBase = dataISOEntrada(data || val('data') || hojeISO()) || hojeISO();
+  const codigo = gerarCodigoSequencial(prefixo, idOrcamento);
+  const clienteLimpo = normalizarNomeCliente(cliente || val('cliente') || 'Cliente');
+  const sufixoLimpo = sufixo ? `_${normalizarNomeCliente(sufixo).toLowerCase()}` : '';
+  const ext = String(extensao || '').replace(/^\./,'').toLowerCase();
+  return `${dataBase}_${codigo}_${clienteLimpo}${sufixoLimpo}${ext ? `.${ext}` : ''}`;
 }
 
 function fornecedorEhZapGrafica(fornecedor){
@@ -665,17 +785,21 @@ function renderizarOrcamentosRemotos(){
     return;
   }
 
-  listaEl.innerHTML = filtrados.map((o, i) => `<div class="remote-result">
-    <div>
-      <strong>${escapeHtml(o.id_orcamento || '-')} — ${escapeHtml(o.cliente || '-')}</strong>
-      <div class="remote-result-meta">
-        Data: ${escapeHtml(dataBR(o.data_orcamento) || o.data_orcamento || '-')} |
-        Status: ${escapeHtml(o.status || '-')} |
-        Total: ${moeda(o.total_final)}
+  listaEl.innerHTML = filtrados.map((o, i) => {
+    const indiceOriginal = orcamentosRemotos.findIndex(ref => ref === o);
+    const codigo = `ORC${String((indiceOriginal >= 0 ? indiceOriginal : i) + 1).padStart(3,'0')}`;
+    return `<div class="remote-result">
+      <div>
+        <strong>${escapeHtml(codigo)} — ${escapeHtml(o.cliente || '-')}</strong>
+        <div class="remote-result-meta">
+          Data: ${escapeHtml(dataBR(o.data_orcamento) || o.data_orcamento || '-')} |
+          Status: ${escapeHtml(o.status || '-')} |
+          Total: ${moeda(o.total_final)}
+        </div>
       </div>
-    </div>
-    <button class="secondary" onclick="selecionarOrcamentoRemoto(${i})">Selecionar para fechamento</button>
-  </div>`).join('');
+      <button class="secondary" onclick="selecionarOrcamentoRemoto(${i})">Selecionar para fechamento</button>
+    </div>`;
+  }).join('');
 }
 
 function selecionarOrcamentoRemoto(indiceFiltrado){
@@ -693,8 +817,10 @@ function selecionarOrcamentoRemoto(indiceFiltrado){
   if(orcamento.data_orcamento) setValorCampo('data', orcamento.data_orcamento);
   if(orcamento.status) setSelectValor('statusOrcamento', orcamento.status);
   salvarFormulario();
-  atualizarTextoRegistroAtual(`Orçamento selecionado para fechamento: ${orcamentoAtualId || 'sem ID'}`);
-  setStatusOrcamentosRemotos(`Orçamento selecionado para fechamento: ${orcamentoAtualId || 'sem ID'}`);
+  const indiceOriginal = orcamentosRemotos.findIndex(ref => ref === orcamento);
+  const codigo = `ORC${String((indiceOriginal >= 0 ? indiceOriginal : indiceFiltrado) + 1).padStart(3,'0')}`;
+  atualizarTextoRegistroAtual(`Orçamento selecionado para fechamento: ${codigo}`);
+  setStatusOrcamentosRemotos(`Orçamento selecionado para fechamento: ${codigo}`);
   renderizar();
 }
 
@@ -897,8 +1023,7 @@ function gerarConteudoControleItem(item, idOrcamento){
   return [
     'CONTROLE INTERNO - ITEM DO ORCAMENTO',
     '',
-    `ID do orcamento: ${idOrcamento || orcamentoAtualId || 'orcamento_em_aberto'}`,
-    `ID do item: ${item.id_item || item.tmp_id || ''}`,
+    `Codigo do orcamento: ${gerarCodigoSequencial('ORC', idOrcamento || orcamentoAtualId)}`,
     `Atualizado em: ${new Date().toLocaleString('pt-BR')}`,
     '',
     `Cliente: ${d.cliente}`,
@@ -925,7 +1050,8 @@ function gerarConteudoControleItem(item, idOrcamento){
     `Produto: ${item.produto || ''}`,
     `Categoria: ${item.categoria || ''}`,
     `Quantidade: ${item.quantidade || ''}`,
-    `Prazo: ${item.prazo || ''}`,
+    `Prazo fornecedor: ${calcularPrazoComercial(item.prazo).prazo_fornecedor}`,
+    `Prazo comercial: ${calcularPrazoComercial(item.prazo).prazo_comercial}`,
     `Fornecedor: ${item.fornecedor || ''}`,
     '',
     `Custo fornecedor: ${moeda(item.custo)}`,
@@ -940,7 +1066,7 @@ function gerarConteudoControleItem(item, idOrcamento){
     'Observacao interna:',
     item.obsInterna || '-',
     ''
-  ].join('\n');
+  ].join('\n') + gerarAssinaturaAporeTxt();
 }
 
 function atualizarControleInternoItem(item, idOrcamento){
@@ -1175,6 +1301,48 @@ function dadosCabecalho(){
   };
 }
 
+function calcularPrazoComercial(prazoFornecedor){
+  const textoOriginal = String(prazoFornecedor || '').trim();
+  const match = textoOriginal.replace(',','.').match(/\d+(\.\d+)?/);
+  if(match){
+    const diasFornecedor = Number(match[0]);
+    const diasComercial = Math.ceil(diasFornecedor * 2);
+    return {
+      diasFornecedor,
+      diasComercial,
+      prazo_fornecedor:textoOriginal || `${diasFornecedor} dias úteis`,
+      prazo_comercial:`${diasComercial} dias úteis`,
+      calculado:true
+    };
+  }
+
+  return {
+    diasFornecedor:null,
+    diasComercial:null,
+    prazo_fornecedor:textoOriginal || '-',
+    prazo_comercial:textoOriginal ? `${textoOriginal} - confirmar prazo` : 'confirmar prazo',
+    calculado:false
+  };
+}
+
+function prazoFinalComercialCalculado(){
+  const prazos = itens.map(item => calcularPrazoComercial(item.prazo));
+  const calculados = prazos.filter(p => Number.isFinite(p.diasComercial));
+  if(calculados.length){
+    const maior = Math.max(...calculados.map(p => p.diasComercial));
+    return {
+      prazo_calculado:`${maior} dias úteis`,
+      prazo_exibido:val('prazoFinal').trim() || `${maior} dias úteis`,
+      ajuste_manual:!!val('prazoFinal').trim()
+    };
+  }
+  return {
+    prazo_calculado:'confirmar prazo',
+    prazo_exibido:val('prazoFinal').trim() || 'confirmar prazo',
+    ajuste_manual:!!val('prazoFinal').trim()
+  };
+}
+
 function renderizarTabela(){
   const el = $('tabelaEdicao');
   if(!itens.length){ el.innerHTML = '<p class="small">Nenhum item adicionado.</p>'; return; }
@@ -1224,7 +1392,6 @@ function observacoesGeraisHtml(){
     <li>Arquivos enviados corretamente em PDF e aprovados até 12h podem entrar em produção no mesmo dia útil.</li>
     <li>Aprovações após 12h podem iniciar produção apenas no próximo dia útil.</li>
     <li>O prazo de transporte ou entrega não está incluído no prazo de produção informado.</li>
-    <li>Produtos sujeitos à disponibilidade e atualização de valores do fornecedor.</li>
   </ul>`;
 }
 
@@ -1232,16 +1399,17 @@ function templateCliente(){
   const d = dadosCabecalho();
   const t = totais();
   const cond = condicoesComerciais(t);
+  const prazoComercialFinal = prazoFinalComercialCalculado();
   let html = `<div class="doc-header">
-    <h2>ORÇAMENTO COMERCIAL</h2>
+    ${BrandHeader({titulo:'ORÇAMENTO COMERCIAL', subtitulo:'APORÉ imagem e som', variacao:'print'})}
     <div>${escapeHtml(d.emissorNome)} &bull; CNPJ: ${escapeHtml(d.emissorCnpj)}<br>PIX: ${escapeHtml(d.emissorPix)} &bull; Tel: ${escapeHtml(d.emissorTelefone)}</div>
   </div>
   <div class="doc-info">
     <div><b>Cliente:</b> ${escapeHtml(d.cliente)}<br><b>Contato:</b> ${escapeHtml(d.contatoCliente)}<br><b>Data:</b> ${escapeHtml(dataBR(d.dataIso))}</div>
-    <div><b>Validade:</b> 7 dias<br><b>Condição:</b> sujeita à disponibilidade do fornecedor.</div>
+    <div><b>Validade:</b> 7 dias<br><b>Prazo comercial estimado:</b> ${escapeHtml(prazoComercialFinal.prazo_exibido)} após aprovação final da arte.</div>
   </div>`;
 
-  html += '<table><thead><tr><th class="item-num">#</th><th>Item</th><th>Quantidade</th><th>Valor</th><th>Prazo</th></tr></thead><tbody>';
+  html += '<table><thead><tr><th class="item-num">#</th><th>Item</th><th>Quantidade</th><th>Valor</th><th>Prazo comercial</th></tr></thead><tbody>';
 
   if(!itens.length){
     html += '<tr><td colspan="5">Nenhum item adicionado.</td></tr>';
@@ -1249,12 +1417,13 @@ function templateCliente(){
 
   itens.forEach((item, i) => {
     const c = calcularItem(item);
+    const prazo = calcularPrazoComercial(item.prazo);
     html += `<tr>
       <td class="item-num">${i + 1}</td>
       <td>${escapeHtml(item.produto)}</td>
       <td>${escapeHtml(item.quantidade)}</td>
       <td class="money">${moeda(c.vendaLiquida)}</td>
-      <td>${escapeHtml(item.prazo || '-')}</td>
+      <td>${escapeHtml(prazo.prazo_comercial)}</td>
     </tr>`;
   });
 
@@ -1263,7 +1432,17 @@ function templateCliente(){
     <b>Total bruto:</b> ${moeda(t.totalBruto)}<br>
     <b>Desconto:</b> ${moeda(t.descontoTotal)}<br>
     <b>Valor final:</b> ${moeda(t.valorFinal)}
-    ${d.prazoFinal ? `<br><b>Prazo final:</b> ${escapeHtml(d.prazoFinal)}` : ''}
+    <br><b>Prazo comercial estimado:</b> ${escapeHtml(prazoComercialFinal.prazo_exibido)} após aprovação final da arte
+  </div>`;
+
+  html += `<div class="doc-total">
+    <b>Regra de arte e prazo</b><br>
+    Entrada de 50% para início da preparação da arte.<br>
+    Preparação da arte em até 24h após confirmação da entrada.<br>
+    Inclui até 2 modificações sem custo.<br>
+    A partir da 3ª modificação: R$ 15,00 por alteração.<br>
+    Produção inicia após aprovação final da arte.<br>
+    O prazo informado já inclui margem operacional de segurança.
   </div>`;
 
   html += `<div class="doc-total">
@@ -1278,6 +1457,7 @@ function templateCliente(){
 
   if(d.obsCliente) html += `<p><b>Observação:</b> ${escapeHtml(d.obsCliente)}</p>`;
   html += observacoesGeraisHtml();
+  html += rodapeMarcaHtml();
   return html;
 }
 
@@ -1285,8 +1465,9 @@ function templateControleInterno(){
   const d = dadosCabecalho();
   const t = totais();
   const cond = condicoesComerciais(t);
+  const prazoComercialFinal = prazoFinalComercialCalculado();
   let html = `<div class="doc-header">
-    <h2>CONTROLE INTERNO DO ORÇAMENTO</h2>
+    ${BrandHeader({titulo:'CONTROLE INTERNO DO ORÇAMENTO', subtitulo:'APORÉ imagem e som', variacao:'print'})}
     <div>${escapeHtml(d.emissorNome)} &bull; CNPJ: ${escapeHtml(d.emissorCnpj)}<br>PIX: ${escapeHtml(d.emissorPix)} &bull; Tel: ${escapeHtml(d.emissorTelefone)}</div>
   </div>
   <div class="doc-info">
@@ -1294,18 +1475,20 @@ function templateControleInterno(){
     <div><b>Documento interno:</b> contém custos, reserva operacional, margem e lucro.<br><b>Não enviar ao cliente.</b></div>
   </div>`;
 
-  html += '<table><thead><tr><th class="item-num">#</th><th>Item</th><th>Quantidade</th><th>Valor</th><th>Prazo</th><th>Fornecedor</th><th>Custo</th><th>Obs. interna</th></tr></thead><tbody>';
+  html += '<table><thead><tr><th class="item-num">#</th><th>Item</th><th>Quantidade</th><th>Valor</th><th>Prazo fornecedor</th><th>Prazo comercial</th><th>Fornecedor</th><th>Custo</th><th>Obs. interna</th></tr></thead><tbody>';
   if(!itens.length){
-    html += '<tr><td colspan="8">Nenhum item adicionado.</td></tr>';
+    html += '<tr><td colspan="9">Nenhum item adicionado.</td></tr>';
   }
   itens.forEach((item, i) => {
     const c = calcularItem(item);
+    const prazo = calcularPrazoComercial(item.prazo);
     html += `<tr class="${statusClasse(item)}">
       <td class="item-num">${i + 1}</td>
       <td>${escapeHtml(item.produto)}</td>
       <td>${escapeHtml(item.quantidade)}</td>
       <td class="money">${moeda(c.vendaLiquida)}</td>
-      <td>${escapeHtml(item.prazo || '-')}</td>
+      <td>${escapeHtml(prazo.prazo_fornecedor)}</td>
+      <td>${escapeHtml(prazo.prazo_comercial)}</td>
       <td>${escapeHtml(item.fornecedor || '-')}</td>
       <td class="money">${moeda(item.custo)}</td>
       <td>${escapeHtml(item.obsInterna || '-')}</td>
@@ -1323,7 +1506,9 @@ function templateControleInterno(){
     <b>Reserva operacional valor:</b> ${moeda(t.reservaOperacionalValor)}<br>
     <b>Lucro líquido estimado:</b> ${moeda(t.lucroLiquido)}<br>
     <b>Motivo do desconto:</b> ${escapeHtml(val('motivoDesconto') || '-')}
-    ${d.prazoFinal ? `<br><b>Prazo final:</b> ${escapeHtml(d.prazoFinal)}` : ''}
+    <br><b>Prazo comercial calculado:</b> ${escapeHtml(prazoComercialFinal.prazo_calculado)}
+    <br><b>Prazo final exibido:</b> ${escapeHtml(prazoComercialFinal.prazo_exibido)}
+    <br><b>Observação de prazo:</b> ${prazoComercialFinal.ajuste_manual ? 'Prazo comercial ajustado manualmente.' : 'Prazo comercial calculado com margem de segurança 2x sobre fornecedor.'}
   </div>`;
 
   html += `<div class="doc-total">
@@ -1348,6 +1533,7 @@ function templateControleInterno(){
 
   if(d.obsCliente) html += `<p><b>Observação:</b> ${escapeHtml(d.obsCliente)}</p>`;
   html += observacoesGeraisHtml();
+  html += rodapeMarcaHtml();
 
   return html;
 }
@@ -1359,9 +1545,13 @@ function renderizarDocumento(){
 }
 
 function atualizarTextoRegistroAtual(texto){
+  const textoLimpo = String(texto || '');
+  const textoFinal = orcamentoAtualId && textoLimpo.includes(orcamentoAtualId)
+    ? textoLimpo.replace(orcamentoAtualId, gerarCodigoSequencial('ORC', orcamentoAtualId))
+    : textoLimpo;
   ['ultimoRegistroText','ultimoRegistroExportText'].forEach(id => {
     const el = $(id);
-    if(el) el.textContent = texto;
+    if(el) el.textContent = textoFinal;
   });
 }
 
@@ -1369,12 +1559,14 @@ function mostrarCliente(){ modo = 'cliente'; salvarFormulario(); renderizarDocum
 function mostrarInterno(){ modo = 'interno'; salvarFormulario(); renderizarDocumento(); }
 
 function gerarNomeArquivo(tipo){
-  const pasta = gerarNomePastaOrcamento();
-  return `${pasta}/${tipo === 'interno' ? 'controle_interno' : 'orcamento_cliente'}.html`;
+  const nome = tipo === 'interno'
+    ? gerarNomeHumanoArquivo({tipo:'controle', extensao:'pdf', sufixo:'controle-interno'})
+    : gerarNomeHumanoArquivo({tipo:'orcamento', extensao:'pdf'});
+  return `${gerarNomePastaOrcamento()}/${nome}`;
 }
 
 function estiloExportado(){
-  return `body{font-family:Arial,Helvetica,sans-serif;color:#1f211f;margin:24px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border:1px solid #ccc;text-align:left;vertical-align:top}th{background:#444b42;color:#fff}.item-num{width:38px;text-align:center;white-space:nowrap}.doc-header{text-align:center;margin-bottom:20px}.doc-info{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;font-size:13px}.doc-total{margin:12px 0;padding:10px;background:#f7efe5;border:1px solid #ccc;border-radius:8px;font-size:13px}.small{font-size:12px;color:#5f6f5b}.money{white-space:nowrap}.status-ok{background:#e6f4ea}.status-alert{background:#fff4d6}.status-risk{background:#ffe6e6}@media(max-width:640px){body{margin:12px}.doc-info{grid-template-columns:1fr}table{font-size:12px}}@media print{@page{size:A4;margin:12mm}body{margin:0}th,.doc-total,.status-ok,.status-alert,.status-risk{-webkit-print-color-adjust:exact;print-color-adjust:exact}tr{page-break-inside:avoid}}`;
+  return `body{font-family:Arial,Helvetica,sans-serif;color:#1f211f;margin:24px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border:1px solid #ccc;text-align:left;vertical-align:top}th{background:#444b42;color:#fff}.item-num{width:38px;text-align:center;white-space:nowrap}.doc-header{text-align:center;margin-bottom:20px}.doc-info{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;font-size:13px}.doc-total{margin:12px 0;padding:10px;background:#f7efe5;border:1px solid #ccc;border-radius:8px;font-size:13px}.small{font-size:12px;color:#5f6f5b}.money{white-space:nowrap}.status-ok{background:#e6f4ea}.status-alert{background:#fff4d6}.status-risk{background:#ffe6e6}.brand-header{display:flex;align-items:center;gap:12px}.brand-header.print{justify-content:center;flex-direction:column;gap:6px;margin-bottom:14px}.brand-logo{display:block;object-fit:contain;max-width:100%;height:auto}.brand-logo.print{width:82px;max-height:50px}.brand-logo.compact{width:48px;max-height:30px}.brand-copy h2{margin:0;color:#1f211f;letter-spacing:0}.brand-copy p{margin:4px 0 0;color:#5f6f5b;font-size:12px}.brand-footer{margin-top:22px;padding-top:10px;border-top:1px solid #ccc;text-align:center;color:#5f6f5b;font-size:11px}.brand-footer img{width:48px;max-height:30px;object-fit:contain;opacity:.78;margin-bottom:4px}@media(max-width:640px){body{margin:12px}.doc-info{grid-template-columns:1fr}table{font-size:12px}}@media print{@page{size:A4;margin:12mm}body{margin:0}th,.doc-total,.status-ok,.status-alert,.status-risk{-webkit-print-color-adjust:exact;print-color-adjust:exact}tr{page-break-inside:avoid}.brand-logo.print{width:70px}}`;
 }
 
 function baixarArquivo(nome, conteudo, tipo){
@@ -1386,19 +1578,8 @@ function baixarArquivo(nome, conteudo, tipo){
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function idOrcamentoParaArquivo(id){
-  return String(id || 'orcamento_em_aberto')
-    .replace(/[<>:"/\\|?*]+/g,'_')
-    .replace(/\s+/g,'_')
-    .replace(/^_+|_+$/g,'') || 'orcamento_em_aberto';
-}
-
 function gerarNomePastaOrcamento(){
-  const d = dadosCabecalho();
-  const id = idOrcamentoParaArquivo(orcamentoAtualId || 'orcamento_em_aberto');
-  const cliente = normalizar(d.cliente || 'cliente') || 'cliente';
-  const data = dataISOEntrada(d.dataIso || hojeISO()).replaceAll('-','') || hojeISO().replaceAll('-','');
-  return `${id}_${cliente}_${data}`;
+  return gerarNomeHumanoArquivo({tipo:'orcamento', extensao:''});
 }
 
 function garantirOrcamentoAtualParaArquivos(){
@@ -1425,11 +1606,12 @@ function documentoHtmlCompleto(titulo, corpoHtml){
 function linhasItensCliente(){
   return itens.map((item, i) => {
     const c = calcularItem(item);
+    const prazo = calcularPrazoComercial(item.prazo);
     return [
       `[${i + 1}] ${item.produto || '-'}`,
       `Quantidade: ${item.quantidade || '-'}`,
       `Valor: ${moeda(c.vendaLiquida)}`,
-      `Prazo: ${item.prazo || '-'}`
+      `Prazo comercial: ${prazo.prazo_comercial}`
     ].join('\n');
   });
 }
@@ -1438,10 +1620,11 @@ function gerarOrcamentoClienteTxt(){
   const d = dadosCabecalho();
   const t = totais();
   const cond = condicoesComerciais(t);
+  const prazoComercialFinal = prazoFinalComercialCalculado();
   return [
     'ORCAMENTO COMERCIAL',
     '',
-    `ID orcamento: ${orcamentoAtualId}`,
+    `Codigo: ${gerarCodigoSequencial('ORC')}`,
     `Cliente: ${d.cliente}`,
     `Contato: ${d.contatoCliente}`,
     `Data: ${dataBR(d.dataIso)}`,
@@ -1452,7 +1635,15 @@ function gerarOrcamentoClienteTxt(){
     `Total bruto: ${moeda(t.totalBruto)}`,
     `Desconto: ${moeda(t.descontoTotal)}`,
     `Valor final: ${moeda(t.valorFinal)}`,
-    `Prazo final: ${d.prazoFinal || '-'}`,
+    `Prazo comercial estimado: ${prazoComercialFinal.prazo_exibido} apos aprovacao final da arte`,
+    '',
+    'REGRA DE ARTE E PRAZO',
+    'Entrada de 50% para inicio da preparacao da arte.',
+    'Preparacao da arte em ate 24h apos confirmacao da entrada.',
+    'Inclui ate 2 modificacoes sem custo.',
+    'A partir da 3a modificacao: R$ 15,00 por alteracao.',
+    'Producao inicia apos aprovacao final da arte.',
+    'O prazo informado ja inclui margem operacional de seguranca.',
     '',
     'CONDICOES',
     `Forma de pagamento: ${cond.forma_pagamento || '-'}`,
@@ -1464,7 +1655,7 @@ function gerarOrcamentoClienteTxt(){
     '',
     `Observacao: ${d.obsCliente || '-'}`,
     ''
-  ].join('\n');
+  ].join('\n') + gerarAssinaturaAporeTxt();
 }
 
 function dadosOrcamentoClienteJson(){
@@ -1517,27 +1708,25 @@ function dadosControleInternoJson(){
 }
 
 function arquivosOrcamentoCliente(){
-  const nome = gerarNomePastaOrcamento();
   return [
-    {nome:'orcamento_cliente.html', nomeDownload:`${nome}_orcamento_cliente.html`, conteudo:documentoHtmlCompleto('orcamento_cliente', templateCliente()), tipo:'text/html;charset=utf-8'},
-    {nome:'orcamento_cliente.txt', nomeDownload:`${nome}_orcamento_cliente.txt`, conteudo:gerarOrcamentoClienteTxt(), tipo:'text/plain;charset=utf-8'},
-    {nome:'orcamento_cliente.json', nomeDownload:`${nome}_orcamento_cliente.json`, conteudo:JSON.stringify(dadosOrcamentoClienteJson(), null, 2), tipo:'application/json;charset=utf-8'}
+    {nome:gerarNomeHumanoArquivo({tipo:'orcamento', extensao:'html'}), conteudo:documentoHtmlCompleto('orcamento_cliente', templateCliente()), tipo:'text/html;charset=utf-8'},
+    {nome:gerarNomeHumanoArquivo({tipo:'orcamento', extensao:'txt'}), conteudo:gerarOrcamentoClienteTxt(), tipo:'text/plain;charset=utf-8'},
+    {nome:gerarNomeHumanoArquivo({tipo:'orcamento', extensao:'json'}), conteudo:JSON.stringify(dadosOrcamentoClienteJson(), null, 2), tipo:'application/json;charset=utf-8'}
   ];
 }
 
 function arquivosControleInternoDossie(){
-  const nome = gerarNomePastaOrcamento();
   return [
-    {nome:'controle_interno.html', nomeDownload:`${nome}_controle_interno.html`, conteudo:documentoHtmlCompleto('controle_interno', templateControleInterno()), tipo:'text/html;charset=utf-8'},
-    {nome:'controle_interno.txt', nomeDownload:`${nome}_controle_interno.txt`, conteudo:gerarControleInternoTxtCompleto(), tipo:'text/plain;charset=utf-8'},
-    {nome:'controle_interno.json', nomeDownload:`${nome}_controle_interno.json`, conteudo:JSON.stringify(dadosControleInternoJson(), null, 2), tipo:'application/json;charset=utf-8'}
+    {nome:gerarNomeHumanoArquivo({tipo:'controle', extensao:'html', sufixo:'controle-interno'}), conteudo:documentoHtmlCompleto('controle_interno', templateControleInterno()), tipo:'text/html;charset=utf-8'},
+    {nome:gerarNomeHumanoArquivo({tipo:'controle', extensao:'txt', sufixo:'controle-interno'}), conteudo:gerarControleInternoTxtCompleto(), tipo:'text/plain;charset=utf-8'},
+    {nome:gerarNomeHumanoArquivo({tipo:'controle', extensao:'json', sufixo:'controle-interno'}), conteudo:JSON.stringify(dadosControleInternoJson(), null, 2), tipo:'application/json;charset=utf-8'}
   ];
 }
 
 async function salvarOuBaixarArquivosOrcamento(arquivos, mensagemSucesso){
   const nomePasta = gerarNomePastaOrcamento();
   if(!('showDirectoryPicker' in window)){
-    arquivos.forEach(arq => baixarArquivo(arq.nomeDownload || `${nomePasta}_${arq.nome}`, arq.conteudo, arq.tipo));
+    arquivos.forEach(arq => baixarArquivo(arq.nomeDownload || arq.nome, arq.conteudo, arq.tipo));
     alert(mensagemSucesso);
     return;
   }
@@ -1609,8 +1798,8 @@ function dadosOrdemServico(){
 
 function gerarOrdemServicoHtml(os){
   let html = `<div class="doc-header">
-    <h2>ORDEM DE SERVIÇO</h2>
-    <div><b>ID orçamento:</b> ${escapeHtml(os.id_orcamento)}<br><b>Cliente:</b> ${escapeHtml(os.cliente)}<br><b>Contato:</b> ${escapeHtml(os.contato || '-')}<br><b>Data:</b> ${escapeHtml(dataBR(os.data_orcamento))}<br><b>Status operacional:</b> ${escapeHtml(os.status || '-')}</div>
+    ${BrandHeader({titulo:'ORDEM DE SERVIÇO', subtitulo:'APORÉ imagem e som', variacao:'print'})}
+    <div><b>Código:</b> ${escapeHtml(gerarCodigoSequencial('OS', os.id_orcamento))}<br><b>Cliente:</b> ${escapeHtml(os.cliente)}<br><b>Contato:</b> ${escapeHtml(os.contato || '-')}<br><b>Data:</b> ${escapeHtml(dataBR(os.data_orcamento))}<br><b>Status operacional:</b> ${escapeHtml(os.status || '-')}</div>
   </div>`;
 
   html += '<table><thead><tr><th class="item-num">#</th><th>Item</th><th>Categoria</th><th>Quantidade</th><th>Fornecedor</th><th>Prazo produção</th><th>Status</th><th>Especificações / obs. produção</th></tr></thead><tbody>';
@@ -1640,6 +1829,7 @@ function gerarOrdemServicoHtml(os){
   html += '<div class="doc-total"><b>Checklist de entrega</b><br>' +
     os.checklist_entrega.map(item => `☐ ${escapeHtml(item)}`).join('<br>') +
     '</div>';
+  html += rodapeMarcaHtml();
   return html;
 }
 
@@ -1647,7 +1837,7 @@ function gerarOrdemServicoTxt(os){
   const linhas = [
     'ORDEM DE SERVICO',
     '',
-    `ID orcamento: ${os.id_orcamento}`,
+    `Codigo: ${gerarCodigoSequencial('OS', os.id_orcamento)}`,
     `Cliente: ${os.cliente}`,
     `Contato: ${os.contato || '-'}`,
     `Data orcamento: ${dataBR(os.data_orcamento)}`,
@@ -1673,7 +1863,7 @@ function gerarOrdemServicoTxt(os){
   os.checklist_conferencia.forEach(item => linhas.push(`[ ] ${item}`));
   linhas.push('', 'CHECKLIST DE ENTREGA / RETIRADA');
   os.checklist_entrega.forEach(item => linhas.push(`[ ] ${item}`));
-  linhas.push('');
+  linhas.push(gerarAssinaturaAporeTxt());
   return linhas.join('\n');
 }
 
@@ -1683,14 +1873,13 @@ function arquivosOrdemServico(){
     alert('Não foi possível garantir o ID do orçamento para gerar a ordem de serviço.');
     return null;
   }
-  const nome = gerarNomePastaOrcamento();
   const html = documentoHtmlCompleto('ordem_servico', gerarOrdemServicoHtml(os));
   return {
     os,
     arquivos:[
-      {nome:'ordem_servico.html', nomeDownload:`${nome}_ordem_servico.html`, conteudo:html, tipo:'text/html;charset=utf-8'},
-      {nome:'ordem_servico.txt', nomeDownload:`${nome}_ordem_servico.txt`, conteudo:gerarOrdemServicoTxt(os), tipo:'text/plain;charset=utf-8'},
-      {nome:'ordem_servico.json', nomeDownload:`${nome}_ordem_servico.json`, conteudo:JSON.stringify(os,null,2), tipo:'application/json;charset=utf-8'}
+      {nome:gerarNomeHumanoArquivo({tipo:'os', extensao:'html'}), conteudo:html, tipo:'text/html;charset=utf-8'},
+      {nome:gerarNomeHumanoArquivo({tipo:'os', extensao:'txt'}), conteudo:gerarOrdemServicoTxt(os), tipo:'text/plain;charset=utf-8'},
+      {nome:gerarNomeHumanoArquivo({tipo:'os', extensao:'json'}), conteudo:JSON.stringify(os,null,2), tipo:'application/json;charset=utf-8'}
     ]
   };
 }
@@ -1699,7 +1888,7 @@ async function gerarOrdemServico(){
   if(!garantirOrcamentoAtualParaArquivos()) return;
   const pacote = arquivosOrdemServico();
   if(!pacote) return;
-  await salvarOuBaixarArquivosOrcamento(pacote.arquivos, `Ordem de serviço gerada com sucesso para ${pacote.os.id_orcamento}`);
+  await salvarOuBaixarArquivosOrcamento(pacote.arquivos, `Ordem de serviço gerada com sucesso para ${gerarCodigoSequencial('OS', pacote.os.id_orcamento)}`);
   atualizarTextoRegistroAtual(pacote.os.id_orcamento);
 }
 
@@ -1730,7 +1919,7 @@ function salvarOrcamentoAtual(mostrarAviso){
   const d = dadosCabecalho();
   const t = totais();
   const cond = condicoesComerciais(t);
-  const id = orcamentoAtualId || gerarId('ORC');
+  const id = orcamentoAtualId || gerarIdInterno('ORC');
   const data = d.dataIso;
   const diasContratacao = diasEntre(data, d.dataContratacao);
 
@@ -1851,7 +2040,7 @@ function salvarOrcamentoAtual(mostrarAviso){
   salvarFormulario();
   renderizarDashboard();
   renderizarDocumento();
-  if(mostrarAviso) alert(`Orçamento salvo no banco local: ${id}`);
+  if(mostrarAviso) alert(`Orçamento salvo no banco local: ${gerarCodigoSequencial('ORC', id)}`);
   return id;
 }
 
@@ -1954,22 +2143,23 @@ function exportarAbaCsv(selectId = 'abaCsv'){
   const headers = schemas[aba];
   const linhas = [headers.join(';')];
   banco[aba].forEach(row => linhas.push(headers.map(h => csvEscape(row[h])).join(';')));
-  baixarArquivo(`${aba}_${hojeISO()}.csv`, linhas.join('\n'), 'text/csv;charset=utf-8');
+  baixarArquivo(gerarNomeHumanoArquivo({tipo:'orcamento', extensao:'csv', sufixo:aba}), linhas.join('\n'), 'text/csv;charset=utf-8');
 }
 
 function exportarBancoJson(){
   atualizarBancoAntesDeExportar();
   const pacote = {exportado_em:new Date().toISOString(), tabelasLogicas, schemas, dados:banco};
-  baixarArquivo(`matriz_orcamento_backup_${hojeISO()}.json`, JSON.stringify(pacote,null,2), 'application/json;charset=utf-8');
+  baixarArquivo(gerarNomeHumanoArquivo({tipo:'backup', extensao:'json', sufixo:'backup-matriz'}), JSON.stringify(pacote,null,2), 'application/json;charset=utf-8');
 }
 
 function gerarResumoControleInterno(idOrcamento){
   const d = dadosCabecalho();
   const t = totais();
+  const prazoComercialFinal = prazoFinalComercialCalculado();
   return [
     'CONTROLE INTERNO DO ORCAMENTO',
     '',
-    `ID do orcamento: ${idOrcamento}`,
+    `Codigo do orcamento: ${gerarCodigoSequencial('ORC', idOrcamento)}`,
     `Cliente: ${d.cliente}`,
     `Contato: ${d.contatoCliente}`,
     `Data do orcamento: ${dataBR(d.dataIso)}`,
@@ -1984,15 +2174,20 @@ function gerarResumoControleInterno(idOrcamento){
     `Reserva operacional valor: ${moeda(t.reservaOperacionalValor)}`,
     `Lucro liquido estimado: ${moeda(t.lucroLiquido)}`,
     `Margem aplicada: ${t.margemLiquida.toFixed(1)}%`,
-    `Prazo final: ${d.prazoFinal || '-'}`,
+    `Prazo comercial calculado: ${prazoComercialFinal.prazo_calculado}`,
+    `Prazo final exibido: ${prazoComercialFinal.prazo_exibido}`,
+    `Observacao de prazo: ${prazoComercialFinal.ajuste_manual ? 'Prazo comercial ajustado manualmente.' : 'Prazo comercial calculado com margem de seguranca 2x sobre fornecedor.'}`,
     '',
     'ITENS',
-    ...itens.map((item, i) => `[${i + 1}] ${item.produto || '-'} | ${item.quantidade || '-'} | ${item.fornecedor || '-'} | ${item.status || 'Orçamento'}`),
+    ...itens.map((item, i) => {
+      const prazo = calcularPrazoComercial(item.prazo);
+      return `[${i + 1}] ${item.produto || '-'} | ${item.quantidade || '-'} | prazo_fornecedor: ${prazo.prazo_fornecedor} | prazo_comercial: ${prazo.prazo_comercial} | ${item.fornecedor || '-'} | ${item.status || 'Orçamento'}`;
+    }),
     '',
     'Observacoes:',
     d.obsCliente || '-',
     ''
-  ].join('\n');
+  ].join('\n') + gerarAssinaturaAporeTxt();
 }
 
 function arquivosControleInterno(){
@@ -2047,6 +2242,7 @@ function iniciar(){
   carregarFormulario();
   carregarItens();
   atualizarControleInternoTodos(orcamentoAtualId);
+  renderizarMarcaInterface();
   ativarPersistencia();
   renderizar();
   setStep(currentStep);
