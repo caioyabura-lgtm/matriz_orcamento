@@ -761,6 +761,7 @@ function totais(){
 
 function condicoesComerciais(t = totais()){
   const percentualEntrada = Math.max(0, num('percentualEntrada'));
+  const taxaEntrega = Math.max(0, num('taxaEntrega'));
   let valorEntrada = Math.max(0, num('valorEntrada'));
 
   if(valorEntrada <= 0 && percentualEntrada > 0){
@@ -768,11 +769,13 @@ function condicoesComerciais(t = totais()){
   }
 
   valorEntrada = Math.min(valorEntrada, t.valorFinal);
+  const valorPrimeiraParcela = valorEntrada + taxaEntrega;
   const saldoRestante = Math.max(0, t.valorFinal - valorEntrada);
   setValorCampo('saldoRestante', moeda(saldoRestante));
 
   return {
-    valor_entrada: valorEntrada,
+    valor_entrada: valorPrimeiraParcela,
+    valor_entrada_base: valorEntrada,
     percentual_entrada: percentualEntrada,
     entrada_recebida: val('entradaRecebida') || 'Não',
     data_recebimento_entrada: val('dataRecebimentoEntrada'),
@@ -781,7 +784,7 @@ function condicoesComerciais(t = totais()){
     saldo_restante: saldoRestante,
     tipo_entrega: val('tipoEntrega'),
     endereco_entrega: val('enderecoEntrega').trim(),
-    taxa_entrega: Math.max(0, num('taxaEntrega')),
+    taxa_entrega: taxaEntrega,
     prazo_entrega: val('prazoEntrega').trim(),
     responsavel_entrega: val('responsavelEntrega').trim(),
     condicoes_especificas: val('condicoesEspecificas').trim()
