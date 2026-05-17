@@ -190,7 +190,7 @@
         <div><label>Desconto global (%)</label><input id="descontoPct" type="text" inputmode="decimal" value="0"></div>
         <div><label>Desconto fixo (R$)</label><input id="descontoValor" type="text" inputmode="decimal" value="0"></div>
         <div><label>Motivo do desconto</label><select id="motivoDesconto"><option value="">Sem desconto</option><option>Cliente recorrente</option><option>Fechamento rápido</option><option>Volume</option><option>Negociação</option><option>Erro de orçamento</option><option>Campanha</option><option>Arredondamento</option><option>Cortesia</option><option>Outro</option></select></div>
-        <div><label>Imposto global estimado (%)</label><input id="impostoPct" type="text" inputmode="decimal" value="0"></div>
+        <div><label>Reserva operacional (%)</label><input id="reservaOperacionalPct" type="text" inputmode="decimal" value="15"></div>
       </div>
       <div class="grid">
         <div><label>Prazo final</label><input id="prazoFinal" placeholder="Ex: 7 dias úteis"></div>
@@ -201,7 +201,7 @@
         <div class="summary-card"><b>Total de custo</b><span id="totalCustoText">R$ 0,00</span></div>
         <div class="summary-card"><b>Desconto total</b><span id="descontoTotalText">R$ 0,00</span></div>
         <div class="summary-card"><b>Valor final</b><span id="valorFinalText">R$ 0,00</span></div>
-        <div class="summary-card"><b>Imposto estimado</b><span id="impostoTotalText">R$ 0,00</span></div>
+        <div class="summary-card"><b>Reserva operacional</b><span id="impostoTotalText">R$ 0,00</span></div>
         <div class="summary-card"><b>Lucro líquido</b><span id="lucroLiquidoText">R$ 0,00</span></div>
         <div class="summary-card"><b>Margem líquida</b><span id="margemLiquidaText">0,0%</span></div>
         <div class="summary-card"><b>Entrada média</b><span id="entradaMediaText">R$ 0,00</span></div>
@@ -272,7 +272,11 @@
           <option value="itens">itens</option>
           <option value="clientes">clientes</option>
           <option value="descontos">descontos</option>
+          <option value="produtos">produtos</option>
+          <option value="custos">custos</option>
           <option value="impostos">impostos</option>
+          <option value="fluxo_caixa">fluxo_caixa</option>
+          <option value="dre">dre</option>
         </select>
         <button class="secondary" onclick="exportarAbaCsv('abaCsvExport')">Exportar CSV</button>
         <button class="success" onclick="exportarControleInternoTxt()">Exportar TXT controle interno</button>
@@ -317,7 +321,11 @@
             <option value="itens">itens</option>
             <option value="clientes">clientes</option>
             <option value="descontos">descontos</option>
+            <option value="produtos">produtos</option>
+            <option value="custos">custos</option>
             <option value="impostos">impostos</option>
+            <option value="fluxo_caixa">fluxo_caixa</option>
+            <option value="dre">dre</option>
           </select>
           <button class="secondary" onclick="exportarAbaCsv()">Exportar CSV</button>
           <button class="success" onclick="exportarControleInternoTxt()">Exportar TXT controle interno</button>
@@ -345,31 +353,41 @@ const STORAGE_DB_KEY = 'matriz_orcamento_banco_local_v4';
 const STORAGE_FORM_KEY = 'matriz_orcamento_form_v4';
 const STORAGE_CONTROLE_TXT_KEY = 'matriz_orcamento_controle_txt_v1';
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUek_4ldbiGf6vnmdDwW3nboQRv9c0MY4ongynrFR8tChwoyfStNlKiWbNZlw7N_fx0Q/exec";
+const RESERVA_OPERACIONAL_PERCENTUAL_PADRAO = 15;
 
 const schemas = {
-  orcamentos: ['id_orcamento','data_orcamento','semana','mes','cliente','contato','status','data_contratacao','dias_ate_contratacao','total_bruto','desconto_valor','desconto_percentual','motivo_desconto','total_final','custo_total','impostos_total','lucro_liquido','margem_liquida','prazo_final','valor_entrada','percentual_entrada','entrada_recebida','data_recebimento_entrada','forma_pagamento','prazo_pagamento','saldo_restante','tipo_entrega','endereco_entrega','taxa_entrega','prazo_entrega','responsavel_entrega','condicoes_especificas','observacoes'],
+  orcamentos: ['id_orcamento','data_orcamento','semana','mes','cliente','contato','status','data_contratacao','dias_ate_contratacao','total_bruto','desconto_valor','desconto_percentual','motivo_desconto','total_final','custo_total','reserva_operacional_percentual','reserva_operacional_valor','lucro_liquido','margem_liquida','prazo_final','valor_entrada','percentual_entrada','entrada_recebida','data_recebimento_entrada','forma_pagamento','prazo_pagamento','saldo_restante','tipo_entrega','endereco_entrega','taxa_entrega','prazo_entrega','responsavel_entrega','condicoes_especificas','observacoes'],
   itens: ['id_item','id_orcamento','produto','categoria','quantidade','fornecedor','custo_fornecedor','preco_venda','desconto_item','imposto_estimado','lucro_bruto','lucro_liquido','margem_item','status_item','observacao_interna'],
   clientes: ['id_cliente','nome','telefone','total_orcamentos','total_contratacoes','total_gasto','lucro_gerado','ticket_medio','tempo_medio_contratacao','classificacao_cliente','observacoes'],
   descontos: ['id_desconto','id_orcamento','data','valor','percentual','motivo','tipo_desconto','autorizado_por','observacoes'],
-  impostos: ['id_imposto','id_orcamento','id_item','tipo_imposto','base_calculo','aliquota','valor','observacoes']
+  produtos: ['id_produto','nome','categoria','observacoes'],
+  custos: ['id_custo','id_orcamento','id_item','tipo','valor','observacoes'],
+  impostos: ['id','nome','percentual','tipo','observacao'],
+  fluxo_caixa: ['id_movimento','id_orcamento','data','tipo','descricao','valor','status'],
+  dre: ['id_dre','periodo','receita_bruta','descontos','receita_liquida','custos','reserva_operacional','lucro_liquido']
 };
+
+const tabelasLogicas = ['ORCAMENTOS','CLIENTES','PRODUTOS','CUSTOS','IMPOSTOS','FLUXO_CAIXA','DRE'];
 
 let banco = {
   orcamentos: [],
   itens: [],
   clientes: [],
   descontos: [],
-  impostos: []
+  produtos: [],
+  custos: [],
+  impostos: [],
+  fluxo_caixa: [],
+  dre: []
 };
 
 let controleInternoTxt = {};
 let pastaControleHandle = null;
-let pastaOrdemServicoHandle = null;
 let orcamentosRemotos = [];
 
 const camposPersistentes = [
   'emissorNome','emissorCnpj','emissorPix','emissorTelefone','cliente','contatoCliente','data','dataContratacao',
-  'descontoPct','descontoValor','motivoDesconto','impostoPct','prazoFinal','statusOrcamento',
+  'descontoPct','descontoValor','motivoDesconto','reservaOperacionalPct','prazoFinal','statusOrcamento',
   'valorEntrada','percentualEntrada','entradaRecebida','dataRecebimentoEntrada','formaPagamento','prazoPagamento',
   'saldoRestante','tipoEntrega','enderecoEntrega','taxaEntrega','prazoEntrega','responsavelEntrega','condicoesEspecificas',
   'obsCliente'
@@ -528,6 +546,7 @@ function carregarFormulario(){
     orcamentoAtualId = salvo.orcamentoAtualId || '';
   }catch(e){}
   if(!val('data')) $('data').value = hojeISO();
+  if(!val('reservaOperacionalPct')) $('reservaOperacionalPct').value = RESERVA_OPERACIONAL_PERCENTUAL_PADRAO;
 }
 
 function ativarPersistencia(){
@@ -667,11 +686,32 @@ function salvarBanco(){
   localStorage.setItem(STORAGE_DB_KEY, JSON.stringify(banco));
 }
 
+function bancoVazio(){
+  return {orcamentos:[],itens:[],clientes:[],descontos:[],produtos:[],custos:[],impostos:[],fluxo_caixa:[],dre:[]};
+}
+
+function garantirEstruturaBanco(){
+  Object.keys(schemas).forEach(aba => {
+    if(!Array.isArray(banco[aba])) banco[aba] = [];
+  });
+  banco.impostos = banco.impostos.filter(i => i && ['id','nome','percentual','tipo','observacao'].some(campo => campo in i) && !('id_imposto' in i));
+  if(!banco.impostos.some(i => i.tipo === 'reserva_interna')){
+    banco.impostos.unshift({
+      id:1,
+      nome:'Reserva Operacional',
+      percentual:RESERVA_OPERACIONAL_PERCENTUAL_PADRAO,
+      tipo:'reserva_interna',
+      observacao:'Reserva para impostos, taxas, manutenção, retrabalho e custos administrativos.'
+    });
+  }
+}
+
 function carregarBanco(){
   try{
     const salvo = JSON.parse(localStorage.getItem(STORAGE_DB_KEY) || '{}');
     Object.keys(banco).forEach(aba => banco[aba] = Array.isArray(salvo[aba]) ? salvo[aba] : []);
-  }catch(e){ banco = {orcamentos:[],itens:[],clientes:[],descontos:[],impostos:[]}; }
+  }catch(e){ banco = bancoVazio(); }
+  garantirEstruturaBanco();
 }
 
 function salvarControleInternoTxt(){
@@ -913,6 +953,8 @@ function statusClasse(item){
 }
 
 function totais(){
+  // Ordem oficial do cálculo interno:
+  // total bruto -> desconto -> total final -> custo total -> reserva operacional -> lucro líquido.
   const totalBruto = itens.reduce((s,i) => s + Number(i.venda || 0), 0);
   const custoTotal = itens.reduce((s,i) => s + Number(i.custo || 0), 0);
   const descontoItens = itens.reduce((s,i) => s + Math.max(0, Number(i.descontoItem || 0)), 0);
@@ -922,13 +964,14 @@ function totais(){
   const descontoGlobal = Math.min(baseGlobal, (baseGlobal * descontoPct / 100) + descontoFixo);
   const descontoTotal = Math.min(totalBruto, descontoItens + descontoGlobal);
   const valorFinal = Math.max(0, totalBruto - descontoTotal);
-  const impostoItens = itens.reduce((s,i) => s + calcularItem(i).imposto, 0);
-  const impostoGlobal = valorFinal * (Math.max(0, num('impostoPct')) / 100);
-  const impostosTotal = impostoItens + impostoGlobal;
-  const lucroLiquido = valorFinal - custoTotal - impostosTotal;
+  const reservaOperacionalPercentual = Math.max(0, num('reservaOperacionalPct') || RESERVA_OPERACIONAL_PERCENTUAL_PADRAO);
+  const reservaOperacionalValor = valorFinal * (reservaOperacionalPercentual / 100);
+  // A reserva operacional é custo interno estimado para impostos, taxas,
+  // manutenção, retrabalho, desgaste, erros de produção e custos administrativos.
+  const lucroLiquido = valorFinal - custoTotal - reservaOperacionalValor;
   const margemLiquida = valorFinal > 0 ? lucroLiquido / valorFinal * 100 : 0;
   const entradaMedia = itens.length ? itens.reduce((s,i) => s + calcularItem(i).entrada, 0) / itens.length : 0;
-  return {totalBruto,custoTotal,descontoItens,descontoGlobal,descontoTotal,valorFinal,impostosTotal,lucroLiquido,margemLiquida,entradaMedia};
+  return {totalBruto,custoTotal,descontoItens,descontoGlobal,descontoTotal,valorFinal,reservaOperacionalPercentual,reservaOperacionalValor,lucroLiquido,margemLiquida,entradaMedia};
 }
 
 function condicoesComerciais(t = totais()){
@@ -1004,48 +1047,54 @@ function atualizarResumo(){
   $('totalCustoText').textContent = moeda(t.custoTotal);
   $('descontoTotalText').textContent = moeda(t.descontoTotal);
   $('valorFinalText').textContent = moeda(t.valorFinal);
-  $('impostoTotalText').textContent = moeda(t.impostosTotal);
+  $('impostoTotalText').textContent = moeda(t.reservaOperacionalValor);
   $('lucroLiquidoText').textContent = moeda(t.lucroLiquido);
   $('margemLiquidaText').textContent = `${t.margemLiquida.toFixed(1)}%`;
   $('entradaMediaText').textContent = moeda(t.entradaMedia);
 }
 
 function gerarDocumento(tipo){
+  return tipo === 'interno' ? templateControleInterno() : templateCliente();
+}
+
+function observacoesGeraisHtml(){
+  return `<p><b>Observações gerais</b></p>
+  <ul>
+    <li>Os prazos são contados em dias úteis após aprovação final da arte e confirmação do pagamento.</li>
+    <li>Arquivos enviados corretamente em PDF e aprovados até 12h podem entrar em produção no mesmo dia útil.</li>
+    <li>Aprovações após 12h podem iniciar produção apenas no próximo dia útil.</li>
+    <li>O prazo de transporte ou entrega não está incluído no prazo de produção informado.</li>
+    <li>Produtos sujeitos à disponibilidade e atualização de valores do fornecedor.</li>
+  </ul>`;
+}
+
+function templateCliente(){
   const d = dadosCabecalho();
   const t = totais();
   const cond = condicoesComerciais(t);
-  const interno = tipo === 'interno';
   let html = `<div class="doc-header">
-    <h2>${interno ? 'CONTROLE INTERNO DO ORÇAMENTO' : 'ORÇAMENTO COMERCIAL'}</h2>
+    <h2>ORÇAMENTO COMERCIAL</h2>
     <div>${escapeHtml(d.emissorNome)} &bull; CNPJ: ${escapeHtml(d.emissorCnpj)}<br>PIX: ${escapeHtml(d.emissorPix)} &bull; Tel: ${escapeHtml(d.emissorTelefone)}</div>
   </div>
   <div class="doc-info">
     <div><b>Cliente:</b> ${escapeHtml(d.cliente)}<br><b>Contato:</b> ${escapeHtml(d.contatoCliente)}<br><b>Data:</b> ${escapeHtml(dataBR(d.dataIso))}</div>
-    <div>${interno ? '<b>Documento interno:</b> contém custos, impostos, margem e lucro.<br><b>Não enviar ao cliente.</b>' : '<b>Validade:</b> 7 dias<br><b>Condição:</b> sujeita à disponibilidade do fornecedor.'}</div>
+    <div><b>Validade:</b> 7 dias<br><b>Condição:</b> sujeita à disponibilidade do fornecedor.</div>
   </div>`;
 
-  html += `<table><thead><tr><th>Item</th><th>Quantidade</th><th>Valor</th><th>Prazo</th>${interno ? '<th>Fornecedor</th><th>Custo</th><th>Imposto</th><th>Lucro</th><th>Margem</th><th>Obs. interna</th>' : ''}</tr></thead><tbody>`;
+  html += '<table><thead><tr><th>Item</th><th>Quantidade</th><th>Valor</th><th>Prazo</th></tr></thead><tbody>';
 
   if(!itens.length){
-    html += `<tr><td colspan="${interno ? 10 : 4}">Nenhum item adicionado.</td></tr>`;
+    html += '<tr><td colspan="4">Nenhum item adicionado.</td></tr>';
   }
 
   itens.forEach(item => {
     const c = calcularItem(item);
-    html += `<tr class="${interno ? statusClasse(item) : ''}">
+    html += `<tr>
       <td>${escapeHtml(item.produto)}</td>
       <td>${escapeHtml(item.quantidade)}</td>
       <td class="money">${moeda(c.vendaLiquida)}</td>
-      <td>${escapeHtml(item.prazo || '-')}</td>`;
-    if(interno){
-      html += `<td>${escapeHtml(item.fornecedor || '-')}</td>
-      <td class="money">${moeda(item.custo)}</td>
-      <td class="money">${moeda(c.imposto)}</td>
-      <td class="money">${moeda(c.lucroLiquido)}</td>
-      <td>${c.margem.toFixed(1)}%</td>
-      <td>${escapeHtml(item.obsInterna || '-')}</td>`;
-    }
-    html += '</tr>';
+      <td>${escapeHtml(item.prazo || '-')}</td>
+    </tr>`;
   });
 
   html += `</tbody></table>
@@ -1053,7 +1102,6 @@ function gerarDocumento(tipo){
     <b>Total bruto:</b> ${moeda(t.totalBruto)}<br>
     <b>Desconto:</b> ${moeda(t.descontoTotal)}<br>
     <b>Valor final:</b> ${moeda(t.valorFinal)}
-    ${interno ? `<br><b>Custo total:</b> ${moeda(t.custoTotal)}<br><b>Imposto estimado:</b> ${moeda(t.impostosTotal)}<br><b>Lucro líquido:</b> ${moeda(t.lucroLiquido)}<br><b>Margem líquida:</b> ${t.margemLiquida.toFixed(1)}%<br><b>Motivo do desconto:</b> ${escapeHtml(val('motivoDesconto') || '-')}` : ''}
     ${d.prazoFinal ? `<br><b>Prazo final:</b> ${escapeHtml(d.prazoFinal)}` : ''}
   </div>`;
 
@@ -1065,19 +1113,79 @@ function gerarDocumento(tipo){
     <b>Prazo de entrega:</b> ${escapeHtml(cond.prazo_entrega || '-')}<br>
     <b>Taxa de entrega:</b> ${moeda(cond.taxa_entrega)}
     ${cond.condicoes_especificas ? `<br><b>Condição específica:</b> ${escapeHtml(cond.condicoes_especificas)}` : ''}
-    ${interno ? `<br><b>Entrada recebida:</b> ${escapeHtml(cond.entrada_recebida)}<br><b>Data recebimento entrada:</b> ${escapeHtml(dataBR(cond.data_recebimento_entrada) || '-')}<br><b>Prazo pagamento:</b> ${escapeHtml(cond.prazo_pagamento || '-')}<br><b>Endereço entrega:</b> ${escapeHtml(cond.endereco_entrega || '-')}<br><b>Responsável entrega:</b> ${escapeHtml(cond.responsavel_entrega || '-')}` : ''}
   </div>`;
 
   if(d.obsCliente) html += `<p><b>Observação:</b> ${escapeHtml(d.obsCliente)}</p>`;
+  html += observacoesGeraisHtml();
+  return html;
+}
 
-  html += `<p><b>Observações gerais</b></p>
-  <ul>
-    <li>Os prazos são contados em dias úteis após aprovação final da arte e confirmação do pagamento.</li>
-    <li>Arquivos enviados corretamente em PDF e aprovados até 12h podem entrar em produção no mesmo dia útil.</li>
-    <li>Aprovações após 12h podem iniciar produção apenas no próximo dia útil.</li>
-    <li>O prazo de transporte ou entrega não está incluído no prazo de produção informado.</li>
-    <li>Produtos sujeitos à disponibilidade e atualização de valores do fornecedor.</li>
-  </ul>`;
+function templateControleInterno(){
+  const d = dadosCabecalho();
+  const t = totais();
+  const cond = condicoesComerciais(t);
+  let html = `<div class="doc-header">
+    <h2>CONTROLE INTERNO DO ORÇAMENTO</h2>
+    <div>${escapeHtml(d.emissorNome)} &bull; CNPJ: ${escapeHtml(d.emissorCnpj)}<br>PIX: ${escapeHtml(d.emissorPix)} &bull; Tel: ${escapeHtml(d.emissorTelefone)}</div>
+  </div>
+  <div class="doc-info">
+    <div><b>Cliente:</b> ${escapeHtml(d.cliente)}<br><b>Contato:</b> ${escapeHtml(d.contatoCliente)}<br><b>Data:</b> ${escapeHtml(dataBR(d.dataIso))}</div>
+    <div><b>Documento interno:</b> contém custos, reserva operacional, margem e lucro.<br><b>Não enviar ao cliente.</b></div>
+  </div>`;
+
+  html += '<table><thead><tr><th>Item</th><th>Quantidade</th><th>Valor</th><th>Prazo</th><th>Fornecedor</th><th>Custo</th><th>Obs. interna</th></tr></thead><tbody>';
+  if(!itens.length){
+    html += '<tr><td colspan="7">Nenhum item adicionado.</td></tr>';
+  }
+  itens.forEach(item => {
+    const c = calcularItem(item);
+    html += `<tr class="${statusClasse(item)}">
+      <td>${escapeHtml(item.produto)}</td>
+      <td>${escapeHtml(item.quantidade)}</td>
+      <td class="money">${moeda(c.vendaLiquida)}</td>
+      <td>${escapeHtml(item.prazo || '-')}</td>
+      <td>${escapeHtml(item.fornecedor || '-')}</td>
+      <td class="money">${moeda(item.custo)}</td>
+      <td>${escapeHtml(item.obsInterna || '-')}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>
+  <div class="doc-total">
+    <b>Total bruto:</b> ${moeda(t.totalBruto)}<br>
+    <b>Desconto:</b> ${moeda(t.descontoTotal)}<br>
+    <b>Valor final:</b> ${moeda(t.valorFinal)}<br>
+    <b>Custo total:</b> ${moeda(t.custoTotal)}<br>
+    <b>Margem aplicada:</b> ${t.margemLiquida.toFixed(1)}%<br>
+    <b>Reserva operacional percentual:</b> ${t.reservaOperacionalPercentual.toFixed(1)}%<br>
+    <b>Reserva operacional valor:</b> ${moeda(t.reservaOperacionalValor)}<br>
+    <b>Lucro líquido estimado:</b> ${moeda(t.lucroLiquido)}<br>
+    <b>Motivo do desconto:</b> ${escapeHtml(val('motivoDesconto') || '-')}
+    ${d.prazoFinal ? `<br><b>Prazo final:</b> ${escapeHtml(d.prazoFinal)}` : ''}
+  </div>`;
+
+  html += `<div class="doc-total">
+    <b>Condições de pagamento</b><br>
+    <b>Forma de pagamento:</b> ${escapeHtml(cond.forma_pagamento || '-')}<br>
+    <b>Entrada / sinal:</b> ${moeda(cond.valor_entrada)}${cond.percentual_entrada ? ` (${cond.percentual_entrada}%${cond.taxa_entrega > 0 ? ' + entrega' : ''})` : cond.taxa_entrega > 0 ? ' (inclui entrega)' : ''}<br>
+    <b>Entrada recebida:</b> ${escapeHtml(cond.entrada_recebida)}<br>
+    <b>Data recebimento entrada:</b> ${escapeHtml(dataBR(cond.data_recebimento_entrada) || '-')}<br>
+    <b>Prazo pagamento:</b> ${escapeHtml(cond.prazo_pagamento || '-')}<br>
+    <b>Saldo restante:</b> ${moeda(cond.saldo_restante)}
+  </div>`;
+
+  html += `<div class="doc-total">
+    <b>Condições de entrega</b><br>
+    <b>Tipo de entrega:</b> ${escapeHtml(cond.tipo_entrega || '-')}<br>
+    <b>Endereço entrega:</b> ${escapeHtml(cond.endereco_entrega || '-')}<br>
+    <b>Taxa de entrega:</b> ${moeda(cond.taxa_entrega)}<br>
+    <b>Prazo de entrega:</b> ${escapeHtml(cond.prazo_entrega || '-')}<br>
+    <b>Responsável entrega:</b> ${escapeHtml(cond.responsavel_entrega || '-')}
+    ${cond.condicoes_especificas ? `<br><b>Condição específica:</b> ${escapeHtml(cond.condicoes_especificas)}` : ''}
+  </div>`;
+
+  if(d.obsCliente) html += `<p><b>Observação:</b> ${escapeHtml(d.obsCliente)}</p>`;
+  html += observacoesGeraisHtml();
 
   return html;
 }
@@ -1126,12 +1234,17 @@ function checklistOrdemServico(){
       'Enviar/confirmar arquivo com fornecedor',
       'Acompanhar status de produção'
     ],
-    entrega:[
+    conferencia:[
       'Conferir material finalizado',
       'Conferir quantidade',
-      'Separar comprovante/registro de entrega',
-      'Confirmar forma de entrega com cliente',
-      'Atualizar status após entrega'
+      'Conferir acabamento e especificações técnicas',
+      'Registrar necessidade de ajuste, se houver'
+    ],
+    entrega:[
+      'Separar material para entrega ou retirada',
+      'Conferir entrega/retirada com responsável antes de finalizar',
+      'Registrar entrega ou retirada concluída',
+      'Atualizar status operacional após conclusão'
     ]
   };
 }
@@ -1139,101 +1252,67 @@ function checklistOrdemServico(){
 function dadosOrdemServico(){
   if(itens.length) salvarOrcamentoAtual(false);
   const d = dadosCabecalho();
-  const cond = condicoesComerciais();
   const checklists = checklistOrdemServico();
   return {
     id_orcamento: orcamentoAtualId || 'orcamento_em_aberto',
     cliente: d.cliente,
     contato: d.contatoCliente,
     data_orcamento: d.dataIso,
-    data_contratacao: d.dataContratacao,
     status: d.statusOrcamento,
-    condicoes_pagamento:{
-      forma_pagamento: cond.forma_pagamento,
-      prazo_pagamento: cond.prazo_pagamento,
-      entrada: cond.valor_entrada,
-      saldo_restante: cond.saldo_restante
-    },
-    condicoes_entrega:{
-      tipo_entrega: cond.tipo_entrega,
-      endereco_entrega: cond.endereco_entrega,
-      taxa_entrega: cond.taxa_entrega,
-      prazo_entrega: cond.prazo_entrega,
-      responsavel_entrega: cond.responsavel_entrega
-    },
     itens: itens.map(item => ({
       produto:item.produto || '',
+      categoria:item.categoria || '',
       quantidade:item.quantidade || '',
       fornecedor:item.fornecedor || '',
       prazo:item.prazo || '',
       status:item.status || 'Orçamento',
-      observacoes_internas:item.obsInterna || ''
+      especificacoes_tecnicas:item.obsInterna || '',
+      observacoes_producao:item.obsInterna || ''
     })),
     checklist_producao: checklists.producao,
+    checklist_conferencia: checklists.conferencia,
     checklist_entrega: checklists.entrega
   };
 }
 
-function nomeBaseOrdemServico(os){
-  const id = normalizar(os.id_orcamento || 'orcamento_em_aberto') || 'orcamento_em_aberto';
+function gerarNomeBaseOS(os = dadosOrdemServico()){
+  const id = String(os.id_orcamento || 'orcamento_em_aberto')
+    .replace(/[<>:"/\\|?*]+/g,'_')
+    .replace(/\s+/g,'_')
+    .replace(/^_+|_+$/g,'') || 'orcamento_em_aberto';
   const cliente = normalizar(os.cliente || 'cliente') || 'cliente';
-  return `ordem_servico_${id}_${cliente}`;
-}
-
-function nomePastaSeguro(nome){
-  return String(nome || 'sem_id').replace(/[<>:"/\\|?*]+/g,'_').trim() || 'sem_id';
-}
-
-function caminhoOrdemServico(os){
-  const data = os.data_orcamento || hojeISO();
-  return {
-    ano: data.slice(0,4) || 'sem_ano',
-    mes: data.slice(5,7) || 'sem_mes',
-    id: nomePastaSeguro(os.id_orcamento || 'orcamento_em_aberto')
-  };
+  const data = dataISOEntrada(os.data_orcamento || hojeISO()).replaceAll('-','') || hojeISO().replaceAll('-','');
+  return `${id}_${cliente}_${data}_ordem_servico`;
 }
 
 function gerarOrdemServicoHtml(os){
   let html = `<div class="doc-header">
     <h2>ORDEM DE SERVIÇO</h2>
-    <div><b>ID orçamento:</b> ${escapeHtml(os.id_orcamento)}<br><b>Cliente:</b> ${escapeHtml(os.cliente)}<br><b>Contato:</b> ${escapeHtml(os.contato || '-')}<br><b>Data:</b> ${escapeHtml(dataBR(os.data_orcamento))}<br>${os.data_contratacao ? `<b>Data contratação:</b> ${escapeHtml(dataBR(os.data_contratacao))}<br>` : ''}<b>Status:</b> ${escapeHtml(os.status || '-')}</div>
+    <div><b>ID orçamento:</b> ${escapeHtml(os.id_orcamento)}<br><b>Cliente:</b> ${escapeHtml(os.cliente)}<br><b>Contato:</b> ${escapeHtml(os.contato || '-')}<br><b>Data:</b> ${escapeHtml(dataBR(os.data_orcamento))}<br><b>Status operacional:</b> ${escapeHtml(os.status || '-')}</div>
   </div>`;
 
-  html += '<table><thead><tr><th>Item</th><th>Quantidade</th><th>Fornecedor</th><th>Prazo</th><th>Status</th><th>Observações internas</th></tr></thead><tbody>';
+  html += '<table><thead><tr><th>Item</th><th>Categoria</th><th>Quantidade</th><th>Fornecedor</th><th>Prazo produção</th><th>Status</th><th>Especificações / obs. produção</th></tr></thead><tbody>';
   if(!os.itens.length){
-    html += '<tr><td colspan="6">Nenhum item registrado.</td></tr>';
+    html += '<tr><td colspan="7">Nenhum item registrado.</td></tr>';
   }
   os.itens.forEach(item => {
     html += `<tr>
       <td>${escapeHtml(item.produto)}</td>
+      <td>${escapeHtml(item.categoria || '-')}</td>
       <td>${escapeHtml(item.quantidade)}</td>
       <td>${escapeHtml(item.fornecedor || '-')}</td>
       <td>${escapeHtml(item.prazo || '-')}</td>
       <td>${escapeHtml(item.status || '-')}</td>
-      <td>${escapeHtml(item.observacoes_internas || '-')}</td>
+      <td>${escapeHtml(item.observacoes_producao || item.especificacoes_tecnicas || '-')}</td>
     </tr>`;
   });
   html += '</tbody></table>';
 
-  html += `<div class="doc-total">
-    <b>Condições de pagamento</b><br>
-    Forma: ${escapeHtml(os.condicoes_pagamento.forma_pagamento || '-')}<br>
-    Prazo: ${escapeHtml(os.condicoes_pagamento.prazo_pagamento || '-')}<br>
-    Entrada: ${moeda(os.condicoes_pagamento.entrada)}<br>
-    Saldo restante: ${moeda(os.condicoes_pagamento.saldo_restante)}
-  </div>`;
-
-  html += `<div class="doc-total">
-    <b>Condições de entrega</b><br>
-    Tipo: ${escapeHtml(os.condicoes_entrega.tipo_entrega || '-')}<br>
-    Endereço: ${escapeHtml(os.condicoes_entrega.endereco_entrega || '-')}<br>
-    Taxa: ${moeda(os.condicoes_entrega.taxa_entrega)}<br>
-    Prazo: ${escapeHtml(os.condicoes_entrega.prazo_entrega || '-')}<br>
-    Responsável: ${escapeHtml(os.condicoes_entrega.responsavel_entrega || '-')}
-  </div>`;
-
   html += '<div class="doc-total"><b>Checklist de produção</b><br>' +
     os.checklist_producao.map(item => `☐ ${escapeHtml(item)}`).join('<br>') +
+    '</div>';
+  html += '<div class="doc-total"><b>Checklist de conferência</b><br>' +
+    os.checklist_conferencia.map(item => `☐ ${escapeHtml(item)}`).join('<br>') +
     '</div>';
   html += '<div class="doc-total"><b>Checklist de entrega</b><br>' +
     os.checklist_entrega.map(item => `☐ ${escapeHtml(item)}`).join('<br>') +
@@ -1249,8 +1328,7 @@ function gerarOrdemServicoTxt(os){
     `Cliente: ${os.cliente}`,
     `Contato: ${os.contato || '-'}`,
     `Data orcamento: ${dataBR(os.data_orcamento)}`,
-    `Data contratacao: ${dataBR(os.data_contratacao) || '-'}`,
-    `Status: ${os.status || '-'}`,
+    `Status operacional: ${os.status || '-'}`,
     '',
     'ITENS'
   ];
@@ -1258,31 +1336,19 @@ function gerarOrdemServicoTxt(os){
     linhas.push(
       '',
       `${i + 1}. ${item.produto}`,
+      `Categoria: ${item.categoria || '-'}`,
       `Quantidade: ${item.quantidade || '-'}`,
       `Fornecedor: ${item.fornecedor || '-'}`,
-      `Prazo: ${item.prazo || '-'}`,
+      `Prazo producao: ${item.prazo || '-'}`,
       `Status: ${item.status || '-'}`,
-      `Observacoes internas: ${item.observacoes_internas || '-'}`
+      `Especificacoes / obs. producao: ${item.observacoes_producao || item.especificacoes_tecnicas || '-'}`
     );
   });
-  linhas.push(
-    '',
-    'CONDICOES DE PAGAMENTO',
-    `Forma: ${os.condicoes_pagamento.forma_pagamento || '-'}`,
-    `Prazo: ${os.condicoes_pagamento.prazo_pagamento || '-'}`,
-    `Entrada: ${moeda(os.condicoes_pagamento.entrada)}`,
-    `Saldo restante: ${moeda(os.condicoes_pagamento.saldo_restante)}`,
-    '',
-    'CONDICOES DE ENTREGA',
-    `Tipo: ${os.condicoes_entrega.tipo_entrega || '-'}`,
-    `Endereco: ${os.condicoes_entrega.endereco_entrega || '-'}`,
-    `Taxa: ${moeda(os.condicoes_entrega.taxa_entrega)}`,
-    `Prazo: ${os.condicoes_entrega.prazo_entrega || '-'}`,
-    `Responsavel: ${os.condicoes_entrega.responsavel_entrega || '-'}`
-  );
   linhas.push('', 'CHECKLIST DE PRODUCAO');
   os.checklist_producao.forEach(item => linhas.push(`[ ] ${item}`));
-  linhas.push('', 'CHECKLIST DE ENTREGA');
+  linhas.push('', 'CHECKLIST DE CONFERENCIA');
+  os.checklist_conferencia.forEach(item => linhas.push(`[ ] ${item}`));
+  linhas.push('', 'CHECKLIST DE ENTREGA / RETIRADA');
   os.checklist_entrega.forEach(item => linhas.push(`[ ] ${item}`));
   linhas.push('');
   return linhas.join('\n');
@@ -1294,7 +1360,11 @@ function arquivosOrdemServico(){
     return null;
   }
   const os = dadosOrdemServico();
-  const nome = nomeBaseOrdemServico(os);
+  if(!os.id_orcamento || os.id_orcamento === 'orcamento_em_aberto'){
+    alert('Não foi possível garantir o ID do orçamento para gerar a ordem de serviço.');
+    return null;
+  }
+  const nome = gerarNomeBaseOS(os);
   const html = '<!DOCTYPE html>' +
     '<html lang="pt-BR">' +
     '<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">' +
@@ -1303,15 +1373,15 @@ function arquivosOrdemServico(){
   return {
     os,
     arquivos:[
-      {nome:'ordem_servico.txt', nomeDownload:`${caminhoOrdemServico(os).ano}_${caminhoOrdemServico(os).mes}_${caminhoOrdemServico(os).id}_ordem_servico.txt`, conteudo:gerarOrdemServicoTxt(os), tipo:'text/plain;charset=utf-8'},
-      {nome:'ordem_servico.html', nomeDownload:`${caminhoOrdemServico(os).ano}_${caminhoOrdemServico(os).mes}_${caminhoOrdemServico(os).id}_ordem_servico.html`, conteudo:html, tipo:'text/html;charset=utf-8'},
-      {nome:'ordem_servico.json', nomeDownload:`${caminhoOrdemServico(os).ano}_${caminhoOrdemServico(os).mes}_${caminhoOrdemServico(os).id}_ordem_servico.json`, conteudo:JSON.stringify(os,null,2), tipo:'application/json;charset=utf-8'}
+      {nome:`${nome}.html`, conteudo:html, tipo:'text/html;charset=utf-8'},
+      {nome:`${nome}.txt`, conteudo:gerarOrdemServicoTxt(os), tipo:'text/plain;charset=utf-8'},
+      {nome:`${nome}.json`, conteudo:JSON.stringify(os,null,2), tipo:'application/json;charset=utf-8'}
     ]
   };
 }
 
 function baixarArquivosOrdemServico(pacote){
-  pacote.arquivos.forEach(arq => baixarArquivo(arq.nomeDownload || arq.nome, arq.conteudo, arq.tipo));
+  pacote.arquivos.forEach(arq => baixarArquivo(arq.nome, arq.conteudo, arq.tipo));
 }
 
 async function obterSubpasta(handle, nome){
@@ -1330,17 +1400,10 @@ async function gerarOrdemServico(){
   }
 
   try{
-    if(!pastaOrdemServicoHandle){
-      pastaOrdemServicoHandle = await window.showDirectoryPicker({ mode:'readwrite' });
-    }
-    const caminho = caminhoOrdemServico(pacote.os);
-    const raizHandle = await obterSubpasta(pastaOrdemServicoHandle, 'ordem_servico');
-    const anoHandle = await obterSubpasta(raizHandle, caminho.ano);
-    const mesHandle = await obterSubpasta(anoHandle, caminho.mes);
-    const idHandle = await obterSubpasta(mesHandle, caminho.id);
+    const pastaOrdemServicoHandle = await window.showDirectoryPicker({ mode:'readwrite' });
 
     for(const arq of pacote.arquivos){
-      const handle = await idHandle.getFileHandle(arq.nome, { create:true });
+      const handle = await pastaOrdemServicoHandle.getFileHandle(arq.nome, { create:true });
       const writable = await handle.createWritable();
       await writable.write(arq.conteudo);
       await writable.close();
@@ -1390,7 +1453,8 @@ function salvarOrcamentoAtual(mostrarAviso){
   banco.orcamentos = banco.orcamentos.filter(o => o.id_orcamento !== id);
   banco.itens = banco.itens.filter(i => i.id_orcamento !== id);
   banco.descontos = banco.descontos.filter(x => x.id_orcamento !== id);
-  banco.impostos = banco.impostos.filter(x => x.id_orcamento !== id);
+  banco.custos = banco.custos.filter(x => x.id_orcamento !== id);
+  banco.fluxo_caixa = banco.fluxo_caixa.filter(x => x.id_orcamento !== id);
 
   banco.orcamentos.push({
     id_orcamento:id,
@@ -1408,7 +1472,8 @@ function salvarOrcamentoAtual(mostrarAviso){
     motivo_desconto:val('motivoDesconto'),
     total_final:t.valorFinal,
     custo_total:t.custoTotal,
-    impostos_total:t.impostosTotal,
+    reserva_operacional_percentual:t.reservaOperacionalPercentual,
+    reserva_operacional_valor:t.reservaOperacionalValor,
     lucro_liquido:t.lucroLiquido,
     margem_liquida:t.margemLiquida,
     prazo_final:d.prazoFinal,
@@ -1452,32 +1517,34 @@ function salvarOrcamentoAtual(mostrarAviso){
       observacao_interna:item.obsInterna
     });
 
-    if(Number(item.impostoItemPct || 0) > 0){
-      banco.impostos.push({
-        id_imposto:gerarId('IMP'),
-        id_orcamento:id,
-        id_item:idItem,
-        tipo_imposto:'estimado_item',
-        base_calculo:c.vendaLiquida,
-        aliquota:Number(item.impostoItemPct || 0),
-        valor:c.imposto,
-        observacoes:'Calculado no item'
+    const idProduto = `PROD_${normalizar(item.produto || 'produto').toUpperCase().slice(0,48)}`;
+    if(item.produto && !banco.produtos.some(p => p.id_produto === idProduto)){
+      banco.produtos.push({
+        id_produto:idProduto,
+        nome:item.produto,
+        categoria:item.categoria || '',
+        observacoes:item.obsInterna || ''
       });
     }
+
+    banco.custos.push({
+      id_custo:gerarId('CUSTO'),
+      id_orcamento:id,
+      id_item:idItem,
+      tipo:'custo_fornecedor',
+      valor:Number(item.custo || 0),
+      observacoes:item.fornecedor || ''
+    });
   });
 
-  if(num('impostoPct') > 0){
-    banco.impostos.push({
-      id_imposto:gerarId('IMP'),
-      id_orcamento:id,
-      id_item:'',
-      tipo_imposto:'estimado_global',
-      base_calculo:t.valorFinal,
-      aliquota:num('impostoPct'),
-      valor:t.valorFinal * (num('impostoPct') / 100),
-      observacoes:'Calculado no fechamento'
-    });
-  }
+  banco.custos.push({
+    id_custo:gerarId('CUSTO'),
+    id_orcamento:id,
+    id_item:'',
+    tipo:'reserva_operacional',
+    valor:t.reservaOperacionalValor,
+    observacoes:`Reserva operacional interna de ${t.reservaOperacionalPercentual.toFixed(1)}%`
+  });
 
   if(t.descontoTotal > 0){
     banco.descontos.push({
@@ -1609,8 +1676,12 @@ function exportarAbaCsv(selectId = 'abaCsv'){
 
 function exportarBancoJson(){
   atualizarBancoAntesDeExportar();
-  const pacote = {exportado_em:new Date().toISOString(), schemas, dados:banco};
+  const pacote = {exportado_em:new Date().toISOString(), tabelasLogicas, schemas, dados:banco};
   baixarArquivo(`matriz_orcamento_backup_${hojeISO()}.json`, JSON.stringify(pacote,null,2), 'application/json;charset=utf-8');
+}
+
+function nomePastaSeguro(nome){
+  return String(nome || 'sem_id').replace(/[<>:"/\\|?*]+/g,'_').trim() || 'sem_id';
 }
 
 function caminhoControleInterno(idOrcamento){
@@ -1640,7 +1711,13 @@ function gerarResumoControleInterno(idOrcamento){
     '',
     `Total de itens: ${itens.length}`,
     `Total bruto: ${moeda(t.totalBruto)}`,
+    `Desconto: ${moeda(t.descontoTotal)}`,
     `Valor final: ${moeda(t.valorFinal)}`,
+    `Custo total: ${moeda(t.custoTotal)}`,
+    `Reserva operacional percentual: ${t.reservaOperacionalPercentual.toFixed(1)}%`,
+    `Reserva operacional valor: ${moeda(t.reservaOperacionalValor)}`,
+    `Lucro liquido estimado: ${moeda(t.lucroLiquido)}`,
+    `Margem aplicada: ${t.margemLiquida.toFixed(1)}%`,
     `Prazo final: ${d.prazoFinal || '-'}`,
     '',
     'ITENS',
@@ -1756,7 +1833,8 @@ async function selecionarPastaControleInterno(){
 
 function apagarBancoLocal(){
   if(!confirm('Isto apaga apenas o banco local salvo neste navegador. Deseja continuar?')) return;
-  banco = {orcamentos:[],itens:[],clientes:[],descontos:[],impostos:[]};
+  banco = bancoVazio();
+  garantirEstruturaBanco();
   controleInternoTxt = {};
   orcamentoAtualId = '';
   salvarBanco();
