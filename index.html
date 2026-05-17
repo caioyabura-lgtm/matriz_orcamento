@@ -50,6 +50,7 @@
     table{width:100%;border-collapse:collapse;font-size:13px;background:#fff}
     th{background:var(--green-black);color:#fff;text-align:left;padding:9px;border:1px solid var(--green-black)}
     td{padding:8px;border:1px solid var(--line);vertical-align:top}
+    .item-num{width:38px;text-align:center;white-space:nowrap}
     tbody tr:nth-child(even){background:#f8f5f1}
     .money{white-space:nowrap}
     .small{font-size:12px;color:var(--muted)}
@@ -1240,15 +1241,16 @@ function templateCliente(){
     <div><b>Validade:</b> 7 dias<br><b>Condição:</b> sujeita à disponibilidade do fornecedor.</div>
   </div>`;
 
-  html += '<table><thead><tr><th>Item</th><th>Quantidade</th><th>Valor</th><th>Prazo</th></tr></thead><tbody>';
+  html += '<table><thead><tr><th class="item-num">#</th><th>Item</th><th>Quantidade</th><th>Valor</th><th>Prazo</th></tr></thead><tbody>';
 
   if(!itens.length){
-    html += '<tr><td colspan="4">Nenhum item adicionado.</td></tr>';
+    html += '<tr><td colspan="5">Nenhum item adicionado.</td></tr>';
   }
 
-  itens.forEach(item => {
+  itens.forEach((item, i) => {
     const c = calcularItem(item);
     html += `<tr>
+      <td class="item-num">${i + 1}</td>
       <td>${escapeHtml(item.produto)}</td>
       <td>${escapeHtml(item.quantidade)}</td>
       <td class="money">${moeda(c.vendaLiquida)}</td>
@@ -1292,13 +1294,14 @@ function templateControleInterno(){
     <div><b>Documento interno:</b> contém custos, reserva operacional, margem e lucro.<br><b>Não enviar ao cliente.</b></div>
   </div>`;
 
-  html += '<table><thead><tr><th>Item</th><th>Quantidade</th><th>Valor</th><th>Prazo</th><th>Fornecedor</th><th>Custo</th><th>Obs. interna</th></tr></thead><tbody>';
+  html += '<table><thead><tr><th class="item-num">#</th><th>Item</th><th>Quantidade</th><th>Valor</th><th>Prazo</th><th>Fornecedor</th><th>Custo</th><th>Obs. interna</th></tr></thead><tbody>';
   if(!itens.length){
-    html += '<tr><td colspan="7">Nenhum item adicionado.</td></tr>';
+    html += '<tr><td colspan="8">Nenhum item adicionado.</td></tr>';
   }
-  itens.forEach(item => {
+  itens.forEach((item, i) => {
     const c = calcularItem(item);
     html += `<tr class="${statusClasse(item)}">
+      <td class="item-num">${i + 1}</td>
       <td>${escapeHtml(item.produto)}</td>
       <td>${escapeHtml(item.quantidade)}</td>
       <td class="money">${moeda(c.vendaLiquida)}</td>
@@ -1371,7 +1374,7 @@ function gerarNomeArquivo(tipo){
 }
 
 function estiloExportado(){
-  return `body{font-family:Arial,Helvetica,sans-serif;color:#1f211f;margin:24px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border:1px solid #ccc;text-align:left;vertical-align:top}th{background:#444b42;color:#fff}.doc-header{text-align:center;margin-bottom:20px}.doc-info{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;font-size:13px}.doc-total{margin:12px 0;padding:10px;background:#f7efe5;border:1px solid #ccc;border-radius:8px;font-size:13px}.small{font-size:12px;color:#5f6f5b}.money{white-space:nowrap}.status-ok{background:#e6f4ea}.status-alert{background:#fff4d6}.status-risk{background:#ffe6e6}@media(max-width:640px){body{margin:12px}.doc-info{grid-template-columns:1fr}table{font-size:12px}}@media print{@page{size:A4;margin:12mm}body{margin:0}th,.doc-total,.status-ok,.status-alert,.status-risk{-webkit-print-color-adjust:exact;print-color-adjust:exact}tr{page-break-inside:avoid}}`;
+  return `body{font-family:Arial,Helvetica,sans-serif;color:#1f211f;margin:24px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border:1px solid #ccc;text-align:left;vertical-align:top}th{background:#444b42;color:#fff}.item-num{width:38px;text-align:center;white-space:nowrap}.doc-header{text-align:center;margin-bottom:20px}.doc-info{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;font-size:13px}.doc-total{margin:12px 0;padding:10px;background:#f7efe5;border:1px solid #ccc;border-radius:8px;font-size:13px}.small{font-size:12px;color:#5f6f5b}.money{white-space:nowrap}.status-ok{background:#e6f4ea}.status-alert{background:#fff4d6}.status-risk{background:#ffe6e6}@media(max-width:640px){body{margin:12px}.doc-info{grid-template-columns:1fr}table{font-size:12px}}@media print{@page{size:A4;margin:12mm}body{margin:0}th,.doc-total,.status-ok,.status-alert,.status-risk{-webkit-print-color-adjust:exact;print-color-adjust:exact}tr{page-break-inside:avoid}}`;
 }
 
 function baixarArquivo(nome, conteudo, tipo){
@@ -1423,7 +1426,7 @@ function linhasItensCliente(){
   return itens.map((item, i) => {
     const c = calcularItem(item);
     return [
-      `${i + 1}. ${item.produto || '-'}`,
+      `[${i + 1}] ${item.produto || '-'}`,
       `Quantidade: ${item.quantidade || '-'}`,
       `Valor: ${moeda(c.vendaLiquida)}`,
       `Prazo: ${item.prazo || '-'}`
@@ -1610,12 +1613,13 @@ function gerarOrdemServicoHtml(os){
     <div><b>ID orçamento:</b> ${escapeHtml(os.id_orcamento)}<br><b>Cliente:</b> ${escapeHtml(os.cliente)}<br><b>Contato:</b> ${escapeHtml(os.contato || '-')}<br><b>Data:</b> ${escapeHtml(dataBR(os.data_orcamento))}<br><b>Status operacional:</b> ${escapeHtml(os.status || '-')}</div>
   </div>`;
 
-  html += '<table><thead><tr><th>Item</th><th>Categoria</th><th>Quantidade</th><th>Fornecedor</th><th>Prazo produção</th><th>Status</th><th>Especificações / obs. produção</th></tr></thead><tbody>';
+  html += '<table><thead><tr><th class="item-num">#</th><th>Item</th><th>Categoria</th><th>Quantidade</th><th>Fornecedor</th><th>Prazo produção</th><th>Status</th><th>Especificações / obs. produção</th></tr></thead><tbody>';
   if(!os.itens.length){
-    html += '<tr><td colspan="7">Nenhum item registrado.</td></tr>';
+    html += '<tr><td colspan="8">Nenhum item registrado.</td></tr>';
   }
-  os.itens.forEach(item => {
+  os.itens.forEach((item, i) => {
     html += `<tr>
+      <td class="item-num">${i + 1}</td>
       <td>${escapeHtml(item.produto)}</td>
       <td>${escapeHtml(item.categoria || '-')}</td>
       <td>${escapeHtml(item.quantidade)}</td>
@@ -1654,7 +1658,7 @@ function gerarOrdemServicoTxt(os){
   os.itens.forEach((item, i) => {
     linhas.push(
       '',
-      `${i + 1}. ${item.produto}`,
+      `[${i + 1}] ${item.produto}`,
       `Categoria: ${item.categoria || '-'}`,
       `Quantidade: ${item.quantidade || '-'}`,
       `Fornecedor: ${item.fornecedor || '-'}`,
@@ -1983,7 +1987,7 @@ function gerarResumoControleInterno(idOrcamento){
     `Prazo final: ${d.prazoFinal || '-'}`,
     '',
     'ITENS',
-    ...itens.map((item, i) => `${i + 1}. ${item.produto || '-'} | ${item.quantidade || '-'} | ${item.fornecedor || '-'} | ${item.status || 'Orçamento'}`),
+    ...itens.map((item, i) => `[${i + 1}] ${item.produto || '-'} | ${item.quantidade || '-'} | ${item.fornecedor || '-'} | ${item.status || 'Orçamento'}`),
     '',
     'Observacoes:',
     d.obsCliente || '-',
