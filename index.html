@@ -6,21 +6,23 @@
   <title>Matriz de Orçamento — Artes Gráficas</title>
   <style>
     :root{
-      --bg:#f4f1ed;--card:#fff;--text:#1f211f;--muted:#5f6f5b;--line:rgba(132,118,108,.35);
-      --dark:#1f211f;--green-light:#91b488;--green-dark:#5f6f5b;--green-black:#444b42;
-      --bluegreen:#668882;--beige:#d6b7a1;--rose:#cd9ba1;--warning:#fff4d6;
-      --apore-ink:#1f211f;--apore-moss:#5f6f5b;--apore-sage:#91b488;--apore-clay:#d6b7a1;--apore-blue:#668882;
-      --danger-soft:#ffe6e6;--ok-soft:#e6f4ea
+      --bg:#f4eee8;--card:#fff;--text:#1f211f;--muted:#6f5e55;--line:rgba(128,66,21,.24);
+      --dark:#2d0010;--green-light:#43857e;--green-dark:#0d5048;--green-black:#003731;
+      --bluegreen:#236a62;--beige:#d79a6d;--rose:#bb5e81;--warning:#fff0d8;
+      --apore-ink:#2d0010;--apore-wine:#6f1235;--apore-berry:#943155;--apore-terracotta:#d79a6d;
+      --apore-copper:#aa6838;--apore-teal:#0d5048;--apore-teal-soft:#43857e;--apore-green:#689a33;
+      --apore-clay:#d79a6d;--apore-moss:#0d5048;--apore-sage:#43857e;--apore-blue:#236a62;
+      --danger-soft:#f7dfe7;--ok-soft:#edf6e4
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
-    header{background:var(--dark);color:#fff;padding:18px 28px;border-bottom:3px solid var(--apore-clay)}
+    header{background:linear-gradient(90deg,var(--apore-ink),var(--apore-wine) 58%,#4d011d);color:#fff;padding:18px 28px;border-bottom:3px solid var(--apore-terracotta)}
     header h1{margin:0 0 4px;font-size:22px}
     header p{margin:0;font-size:13px;color:#e6e0db}
     main{max-width:1180px;margin:0 auto;padding:22px}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 8px 22px rgba(31,33,31,.08);margin-bottom:16px}
+    .card{background:var(--card);border:1px solid var(--line);border-top:3px solid rgba(13,80,72,.22);border-radius:14px;padding:18px;box-shadow:0 8px 22px rgba(45,0,16,.08);margin-bottom:16px}
     details.emissor-config{margin-bottom:16px}
-    details.emissor-config summary{cursor:pointer;font-weight:bold;background:#f7efe5;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+    details.emissor-config summary{cursor:pointer;font-weight:bold;background:#fbefe6;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
     h2{margin:0 0 14px;font-size:18px}
     h3{margin:0 0 10px;font-size:15px;color:var(--green-black)}
     label{display:block;font-size:12px;font-weight:bold;margin:10px 0 5px;color:var(--green-black)}
@@ -30,12 +32,13 @@
     .row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
     .row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
     .steps-nav{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 16px}
-    .steps-nav button{flex:1;min-width:130px;background:var(--beige);color:var(--dark);border:1px solid var(--line);border-radius:999px}
-    .steps-nav button.active{background:var(--green-dark);color:white}
-    .steps-nav button:hover{background:var(--green-light);color:white}
+    .steps-nav button{flex:1;min-width:130px;background:#f1d0b8;color:var(--dark);border:1px solid var(--line);border-radius:999px}
+    .steps-nav button.active{background:var(--apore-teal);color:white}
+    .steps-nav button:hover{background:var(--apore-berry);color:white}
     .view-nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
-    .view-nav button{background:var(--beige);color:var(--dark);border:1px solid var(--line)}
-    .view-nav button.active{background:var(--green-black);color:#fff}
+    .view-nav{background:rgba(255,255,255,.45);border:1px solid var(--line);border-radius:12px;padding:8px}
+    .view-nav button{background:#f1d0b8;color:var(--dark);border:1px solid var(--line)}
+    .view-nav button.active{background:var(--apore-wine);color:#fff}
     .app-page{display:none}
     .app-page.active{display:block}
     .step{display:none}
@@ -44,22 +47,22 @@
     .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
     button{border:0;border-radius:8px;padding:10px 14px;cursor:pointer;font-weight:bold;font-size:13px}
     button:disabled{opacity:.45;cursor:not-allowed}
-    .primary{background:var(--apore-moss);color:#fff}
-    .secondary{background:var(--beige);color:var(--dark)}
-    .success{background:var(--bluegreen);color:#fff}
-    .danger{background:var(--rose);color:var(--dark)}
+    .primary{background:var(--apore-teal);color:#fff}
+    .secondary{background:#f1d0b8;color:var(--dark)}
+    .success{background:var(--apore-green);color:#fff}
+    .danger{background:var(--apore-berry);color:#fff}
     table{width:100%;border-collapse:collapse;font-size:13px;background:#fff}
-    th{background:var(--green-black);color:#fff;text-align:left;padding:9px;border:1px solid var(--green-black)}
+    th{background:var(--apore-wine);color:#fff;text-align:left;padding:9px;border:1px solid var(--apore-wine)}
     td{padding:8px;border:1px solid var(--line);vertical-align:top}
     .item-num{width:38px;text-align:center;white-space:nowrap}
-    tbody tr:nth-child(even){background:#f8f5f1}
+    tbody tr:nth-child(even){background:#fbf4ee}
     .money{white-space:nowrap}
     .small{font-size:12px;color:var(--muted)}
     .status-ok{background:var(--ok-soft)!important}
     .status-alert{background:var(--warning)!important}
     .status-risk{background:var(--danger-soft)!important}
     .summary-grid,.dashboard-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
-    .summary-card,.dashboard-card{background:#f7efe5;border:1px solid var(--line);border-radius:12px;padding:12px;min-height:76px}
+    .summary-card,.dashboard-card{background:#fbefe6;border:1px solid var(--line);border-radius:12px;padding:12px;min-height:76px}
     .summary-card b,.dashboard-card b{display:block;font-size:12px;color:var(--green-black);margin-bottom:6px}
     .summary-card span,.dashboard-card span{font-size:18px;font-weight:bold}
     .table-scroll{overflow:auto;max-height:340px;border:1px solid var(--line);border-radius:10px}
@@ -67,10 +70,10 @@
     .doc-header{text-align:center;margin-bottom:20px}
     .doc-header h2{margin:0 0 8px;font-size:20px}
     .doc-info{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;font-size:13px}
-    .doc-total{margin:12px 0;padding:10px;background:#f7efe5;border:1px solid var(--line);border-radius:8px;font-size:13px}
+    .doc-total{margin:12px 0;padding:10px;background:#fbefe6;border:1px solid var(--line);border-radius:8px;font-size:13px}
     .print-document{display:none}
-    .muted-box{background:#f7efe5;border:1px solid var(--line);border-radius:10px;padding:10px}
-    .conditional-box{display:none;background:#fff4d6;border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:12px}
+    .muted-box{background:#fbefe6;border:1px solid var(--line);border-radius:10px;padding:10px}
+    .conditional-box{display:none;background:#fff0d8;border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:12px}
     .conditional-box.active{display:block}
     .check-line{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--green-black);margin:8px 0}
     .check-line input{width:auto;margin-top:2px}
@@ -79,24 +82,26 @@
     .remote-result strong{display:block;margin-bottom:4px}
     .remote-result-meta{font-size:12px;color:var(--muted);line-height:1.45}
     .brand-header{display:flex;align-items:center;gap:12px}
-    .brand-header.panel{justify-content:flex-start}
-    .brand-header.dashboard{justify-content:space-between;margin-bottom:14px;opacity:.82}
-    .brand-header.print{justify-content:center;flex-direction:column;gap:6px;margin-bottom:14px}
+    .brand-header.panel{justify-content:flex-start;max-width:1180px;margin:0 auto;gap:18px}
+    .brand-header.dashboard{justify-content:space-between;margin-bottom:14px;opacity:.94;background:#fff;border:1px solid var(--line);border-left:4px solid var(--apore-terracotta);border-radius:10px;padding:12px 14px}
+    .brand-header.print{justify-content:center;flex-direction:column;gap:8px;margin-bottom:16px}
     .brand-header.compact{gap:8px}
     .brand-logo{display:block;object-fit:contain;max-width:100%;height:auto}
     .brand-logo.compact{width:54px;max-height:34px}
-    .brand-logo.panel{width:78px;max-height:48px}
-    .brand-logo.dashboard{width:70px;max-height:44px}
-    .brand-logo.print{width:82px;max-height:50px}
+    .brand-logo.panel{width:128px;max-height:76px}
+    .brand-logo.dashboard{width:96px;max-height:58px}
+    .brand-logo.print{width:150px;max-height:92px}
     .brand-copy h1,.brand-copy h2,.brand-copy h3{margin:0;color:inherit;letter-spacing:0}
     .brand-copy p{margin:4px 0 0;color:inherit;font-size:12px;opacity:.82}
+    .brand-header.panel .brand-copy h2{font-size:22px;font-weight:700}
+    .brand-header.panel .brand-copy p{font-size:13px;color:#e6e0db;opacity:.9}
     .brand-header.dashboard .brand-copy{color:var(--apore-ink)}
     .brand-header.dashboard .brand-copy p{color:var(--muted)}
     .brand-footer{margin-top:22px;padding-top:10px;border-top:1px solid var(--line);text-align:center;color:var(--muted);font-size:11px}
     .brand-footer img{width:48px;max-height:30px;object-fit:contain;opacity:.78;margin-bottom:4px}
     @media(max-width:900px){.dashboard-grid,.summary-grid{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:820px){.grid,.row-3,.row-4,.doc-info{grid-template-columns:1fr}}
-    @media(max-width:560px){main{padding:12px}.dashboard-grid,.summary-grid{grid-template-columns:1fr}.steps-nav{flex-wrap:nowrap;overflow-x:auto}.steps-nav button{flex:0 0 150px}.remote-result{grid-template-columns:1fr}.remote-result button{width:100%}}
+    @media(max-width:560px){header{padding:14px 16px}.brand-header.panel{gap:12px}.brand-logo.panel{width:96px;max-height:58px}.brand-logo.dashboard{width:76px;max-height:46px}.brand-header.panel .brand-copy h2{font-size:18px}main{padding:12px}.dashboard-grid,.summary-grid{grid-template-columns:1fr}.steps-nav{flex-wrap:nowrap;overflow-x:auto}.steps-nav button{flex:0 0 150px}.remote-result{grid-template-columns:1fr}.remote-result button{width:100%}}
     @media print{
       body{background:#fff!important}
       body *{visibility:hidden!important}
@@ -104,10 +109,10 @@
       #printDocument{display:block!important;position:absolute!important;left:0!important;top:0!important;width:100%!important;padding:0!important;margin:0!important;background:#fff!important;color:#000!important}
       #printDocument table{page-break-inside:auto;border-collapse:collapse;width:100%;font-size:11px}
       #printDocument tr{page-break-inside:avoid}
-      #printDocument th{background:#444b42!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      #printDocument th{background:#6f1235!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
       #printDocument td,#printDocument th{border:1px solid #999!important;padding:6px!important}
-      #printDocument .doc-total{background:#f7efe5!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-      #printDocument .brand-logo.print{width:70px!important}
+      #printDocument .doc-total{background:#fbefe6!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      #printDocument .brand-logo.print{width:122px!important;max-height:76px!important}
       #printDocument .brand-footer{border-top:1px solid #bbb!important;color:#555!important}
       @page{size:A4;margin:12mm}
     }
@@ -116,8 +121,13 @@
 <body>
 <header class="no-print">
   <div id="appBrandHeader">
-    <h1>Matriz de Orçamento — Artes Gráficas</h1>
-    <p>Sistema offline: orçamento, controle interno, banco local, exportação e dashboard.</p>
+    <div class="brand-header panel">
+      <img class="brand-logo panel" src="logo_apore.png" alt="APORÉ imagem e som">
+      <div class="brand-copy">
+        <h2>APORÉ imagem e som</h2>
+        <p>Matriz de orçamento, produção gráfica e controle documental.</p>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -466,8 +476,8 @@ function renderizarMarcaInterface(){
   const topo = $('appBrandHeader');
   if(topo){
     topo.innerHTML = BrandHeader({
-      titulo:'Matriz de Orçamento — Artes Gráficas',
-      subtitulo:'Sistema offline: orçamento, controle interno, banco local, exportação e dashboard.',
+      titulo:'APORÉ imagem e som',
+      subtitulo:'Matriz de orçamento, produção gráfica e controle documental.',
       variacao:'panel'
     });
   }
@@ -1566,7 +1576,7 @@ function gerarNomeArquivo(tipo){
 }
 
 function estiloExportado(){
-  return `body{font-family:Arial,Helvetica,sans-serif;color:#1f211f;margin:24px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border:1px solid #ccc;text-align:left;vertical-align:top}th{background:#444b42;color:#fff}.item-num{width:38px;text-align:center;white-space:nowrap}.doc-header{text-align:center;margin-bottom:20px}.doc-info{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;font-size:13px}.doc-total{margin:12px 0;padding:10px;background:#f7efe5;border:1px solid #ccc;border-radius:8px;font-size:13px}.small{font-size:12px;color:#5f6f5b}.money{white-space:nowrap}.status-ok{background:#e6f4ea}.status-alert{background:#fff4d6}.status-risk{background:#ffe6e6}.brand-header{display:flex;align-items:center;gap:12px}.brand-header.print{justify-content:center;flex-direction:column;gap:6px;margin-bottom:14px}.brand-logo{display:block;object-fit:contain;max-width:100%;height:auto}.brand-logo.print{width:82px;max-height:50px}.brand-logo.compact{width:48px;max-height:30px}.brand-copy h2{margin:0;color:#1f211f;letter-spacing:0}.brand-copy p{margin:4px 0 0;color:#5f6f5b;font-size:12px}.brand-footer{margin-top:22px;padding-top:10px;border-top:1px solid #ccc;text-align:center;color:#5f6f5b;font-size:11px}.brand-footer img{width:48px;max-height:30px;object-fit:contain;opacity:.78;margin-bottom:4px}@media(max-width:640px){body{margin:12px}.doc-info{grid-template-columns:1fr}table{font-size:12px}}@media print{@page{size:A4;margin:12mm}body{margin:0}th,.doc-total,.status-ok,.status-alert,.status-risk{-webkit-print-color-adjust:exact;print-color-adjust:exact}tr{page-break-inside:avoid}.brand-logo.print{width:70px}}`;
+  return `body{font-family:Arial,Helvetica,sans-serif;color:#1f211f;margin:24px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border:1px solid #d7c3b4;text-align:left;vertical-align:top}th{background:#6f1235;color:#fff}.item-num{width:38px;text-align:center;white-space:nowrap}.doc-header{text-align:center;margin-bottom:20px}.doc-info{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;font-size:13px}.doc-total{margin:12px 0;padding:10px;background:#fbefe6;border:1px solid #d7c3b4;border-radius:8px;font-size:13px}.small{font-size:12px;color:#6f5e55}.money{white-space:nowrap}.status-ok{background:#edf6e4}.status-alert{background:#fff0d8}.status-risk{background:#f7dfe7}.brand-header{display:flex;align-items:center;gap:12px}.brand-header.print{justify-content:center;flex-direction:column;gap:8px;margin-bottom:16px}.brand-logo{display:block;object-fit:contain;max-width:100%;height:auto}.brand-logo.print{width:150px;max-height:92px}.brand-logo.compact{width:48px;max-height:30px}.brand-copy h2{margin:0;color:#2d0010;letter-spacing:0}.brand-copy p{margin:4px 0 0;color:#6f5e55;font-size:12px}.brand-footer{margin-top:22px;padding-top:10px;border-top:1px solid #d7c3b4;text-align:center;color:#6f5e55;font-size:11px}.brand-footer img{width:48px;max-height:30px;object-fit:contain;opacity:.78;margin-bottom:4px}@media(max-width:640px){body{margin:12px}.doc-info{grid-template-columns:1fr}table{font-size:12px}}@media print{@page{size:A4;margin:12mm}body{margin:0}th,.doc-total,.status-ok,.status-alert,.status-risk{-webkit-print-color-adjust:exact;print-color-adjust:exact}tr{page-break-inside:avoid}.brand-logo.print{width:122px;max-height:76px}}`;
 }
 
 function baixarArquivo(nome, conteudo, tipo){
