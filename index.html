@@ -784,10 +784,16 @@ async function enviarOrcamentoParaSheets(){
   if(!garantirOrcamentoAtual()) return false;
   setStatusSheets('Enviando orçamento para a planilha...');
   const payload = montarPayloadOrcamentoSheets();
+  const urlUsada = APPS_SCRIPT_URL;
+  console.log('URL usada no envio para Google Sheets:', urlUsada);
   console.log('Payload enviado para Google Sheets:', payload);
 
   try{
-    const resp = await fetch(APPS_SCRIPT_URL, {
+    if(!urlUsada.endsWith('/exec')){
+      throw new Error(`APPS_SCRIPT_URL deve terminar com /exec. URL atual: ${urlUsada}`);
+    }
+
+    const resp = await fetch(urlUsada, {
       method:'POST',
       body:JSON.stringify(payload)
     });
@@ -809,8 +815,8 @@ async function enviarOrcamentoParaSheets(){
     setStatusSheets(`Enviado com sucesso${respostaTexto ? `: ${respostaTexto.slice(0,180)}` : ''}`);
     return true;
   }catch(e){
-    console.error('Erro ao enviar orçamento para Google Sheets:', e);
-    setStatusSheets(`Não foi possível enviar para a planilha. Os dados seguem salvos localmente. Erro: ${e.message}`);
+    console.error('Erro completo ao enviar orçamento para Google Sheets:', e);
+    setStatusSheets('Falha ao enviar. Verifique URL /exec, permissões do Web App e implantação atualizada.');
     return false;
   }
 }
