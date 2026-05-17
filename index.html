@@ -211,7 +211,7 @@
         <button class="secondary" onclick="mostrarInterno()">Ver controle interno</button>
         <button class="success" onclick="imprimirDocumento()">Imprimir / salvar PDF exibido</button>
         <button class="secondary" onclick="baixarDocumento(modo)">Gerar arquivos exibidos</button>
-        <button class="primary" onclick="enviarOrcamentoParaSheets()">Salvar orçamento na planilha</button>
+        <button class="primary" onclick="enviarOrcamentoParaSheets()">Enviar orçamento atual para planilha</button>
       </div>
       <p class="small">Nome sugerido: <span id="nomeArquivoAtual">-</span></p>
       <p class="small">Orçamento atual: <span id="ultimoRegistroText">ainda não salvo</span></p>
@@ -783,17 +783,34 @@ function montarPayloadOrcamentoSheets(){
 async function enviarOrcamentoParaSheets(){
   if(!garantirOrcamentoAtual()) return false;
   setStatusSheets('Enviando orçamento para a planilha...');
+  const payload = montarPayloadOrcamentoSheets();
+  console.log('Payload enviado para Google Sheets:', payload);
 
   try{
     const resp = await fetch(APPS_SCRIPT_URL, {
       method:'POST',
-      body:JSON.stringify(montarPayloadOrcamentoSheets())
+      body:JSON.stringify(payload)
     });
-    if(!resp.ok) throw new Error('Falha no envio para o Apps Script');
-    setStatusSheets('Orçamento enviado para a planilha');
+    const respostaTexto = await resp.text();
+    console.log('Resposta do Apps Script:', {
+      ok:resp.ok,
+      status:resp.status,
+      statusText:resp.statusText,
+      body:respostaTexto
+    });
+
+    let respostaJson = null;
+    try{ respostaJson = JSON.parse(respostaTexto); }catch(e){}
+    if(!resp.ok || respostaJson?.ok === false || respostaJson?.erro){
+      const detalhe = respostaJson?.erro || respostaJson?.message || respostaTexto || resp.statusText;
+      throw new Error(`HTTP ${resp.status}: ${detalhe}`);
+    }
+
+    setStatusSheets(`Enviado com sucesso${respostaTexto ? `: ${respostaTexto.slice(0,180)}` : ''}`);
     return true;
   }catch(e){
-    setStatusSheets('Não foi possível enviar para a planilha. Os dados seguem salvos localmente.');
+    console.error('Erro ao enviar orçamento para Google Sheets:', e);
+    setStatusSheets(`Não foi possível enviar para a planilha. Os dados seguem salvos localmente. Erro: ${e.message}`);
     return false;
   }
 }
