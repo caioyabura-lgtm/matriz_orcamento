@@ -210,7 +210,7 @@
         <button class="primary" onclick="mostrarCliente()">Ver orçamento do cliente</button>
         <button class="secondary" onclick="mostrarInterno()">Ver controle interno</button>
         <button class="success" onclick="imprimirDocumento()">Imprimir / salvar PDF exibido</button>
-        <button class="secondary" onclick="baixarDocumento(modo)">Baixar HTML exibido</button>
+        <button class="secondary" onclick="baixarDocumento(modo)">Gerar arquivos exibidos</button>
       </div>
       <p class="small">Nome sugerido: <span id="nomeArquivoAtual">-</span></p>
       <p class="small">Orçamento atual: <span id="ultimoRegistroText">ainda não salvo</span></p>
@@ -279,7 +279,7 @@
           <option value="dre">dre</option>
         </select>
         <button class="secondary" onclick="exportarAbaCsv('abaCsvExport')">Exportar CSV</button>
-        <button class="success" onclick="exportarControleInternoTxt()">Exportar TXT controle interno</button>
+        <button class="success" onclick="exportarControleInternoTxt()">Gerar controle interno</button>
       </div>
       <p class="small">Orçamento atual: <span id="ultimoRegistroExportText">ainda não salvo</span></p>
     </div>
@@ -328,8 +328,7 @@
             <option value="dre">dre</option>
           </select>
           <button class="secondary" onclick="exportarAbaCsv()">Exportar CSV</button>
-          <button class="success" onclick="exportarControleInternoTxt()">Exportar TXT controle interno</button>
-          <button class="secondary" onclick="selecionarPastaControleInterno()">Salvar TXT na pasta</button>
+          <button class="success" onclick="exportarControleInternoTxt()">Gerar controle interno</button>
           <button class="danger" onclick="apagarBancoLocal()">Zerar banco local</button>
         </div>
       </div>
@@ -382,7 +381,6 @@ let banco = {
 };
 
 let controleInternoTxt = {};
-let pastaControleHandle = null;
 let orcamentosRemotos = [];
 
 const camposPersistentes = [
@@ -806,7 +804,6 @@ function atualizarStatusItem(indice, novoStatus){
   item.status = novoStatus;
   salvarItens();
   atualizarControleInternoItem(item, orcamentoAtualId);
-  if(pastaControleHandle) salvarTxtNaPastaControle();
   renderizar();
 }
 
@@ -1207,9 +1204,8 @@ function mostrarCliente(){ modo = 'cliente'; salvarFormulario(); renderizarDocum
 function mostrarInterno(){ modo = 'interno'; salvarFormulario(); renderizarDocumento(); }
 
 function gerarNomeArquivo(tipo){
-  const d = dadosCabecalho();
-  const cliente = normalizar(d.cliente || 'cliente') || 'cliente';
-  return `${tipo === 'interno' ? 'controle_interno' : 'orcamento_cliente'}_${cliente}_${d.dataIso.replaceAll('-','')}.html`;
+  const pasta = gerarNomePastaOrcamento();
+  return `${pasta}/${tipo === 'interno' ? 'controle_interno' : 'orcamento_cliente'}.html`;
 }
 
 function estiloExportado(){
@@ -1223,6 +1219,177 @@ function baixarArquivo(nome, conteudo, tipo){
   a.href = url; a.download = nome;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function idOrcamentoParaArquivo(id){
+  return String(id || 'orcamento_em_aberto')
+    .replace(/[<>:"/\\|?*]+/g,'_')
+    .replace(/\s+/g,'_')
+    .replace(/^_+|_+$/g,'') || 'orcamento_em_aberto';
+}
+
+function gerarNomePastaOrcamento(){
+  const d = dadosCabecalho();
+  const id = idOrcamentoParaArquivo(orcamentoAtualId || 'orcamento_em_aberto');
+  const cliente = normalizar(d.cliente || 'cliente') || 'cliente';
+  const data = dataISOEntrada(d.dataIso || hojeISO()).replaceAll('-','') || hojeISO().replaceAll('-','');
+  return `${id}_${cliente}_${data}`;
+}
+
+function garantirOrcamentoAtualParaArquivos(){
+  if(!itens.length){
+    alert('Adicione pelo menos um item antes de gerar os arquivos do orçamento.');
+    return false;
+  }
+  if(!orcamentoAtualId) salvarOrcamentoAtual(false);
+  if(!orcamentoAtualId){
+    alert('Não foi possível garantir o ID do orçamento para gerar os arquivos.');
+    return false;
+  }
+  return true;
+}
+
+function documentoHtmlCompleto(titulo, corpoHtml){
+  return '<!DOCTYPE html>' +
+    '<html lang="pt-BR">' +
+    '<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+    '<title>' + escapeHtml(titulo) + '</title><style>' + estiloExportado() + '<' + '/style><' + '/head>' +
+    '<body>' + corpoHtml + '<' + '/body><' + '/html>';
+}
+
+function linhasItensCliente(){
+  return itens.map((item, i) => {
+    const c = calcularItem(item);
+    return [
+      `${i + 1}. ${item.produto || '-'}`,
+      `Quantidade: ${item.quantidade || '-'}`,
+      `Valor: ${moeda(c.vendaLiquida)}`,
+      `Prazo: ${item.prazo || '-'}`
+    ].join('\n');
+  });
+}
+
+function gerarOrcamentoClienteTxt(){
+  const d = dadosCabecalho();
+  const t = totais();
+  const cond = condicoesComerciais(t);
+  return [
+    'ORCAMENTO COMERCIAL',
+    '',
+    `ID orcamento: ${orcamentoAtualId}`,
+    `Cliente: ${d.cliente}`,
+    `Contato: ${d.contatoCliente}`,
+    `Data: ${dataBR(d.dataIso)}`,
+    '',
+    'ITENS',
+    ...linhasItensCliente(),
+    '',
+    `Total bruto: ${moeda(t.totalBruto)}`,
+    `Desconto: ${moeda(t.descontoTotal)}`,
+    `Valor final: ${moeda(t.valorFinal)}`,
+    `Prazo final: ${d.prazoFinal || '-'}`,
+    '',
+    'CONDICOES',
+    `Forma de pagamento: ${cond.forma_pagamento || '-'}`,
+    `Entrada / sinal: ${moeda(cond.valor_entrada)}`,
+    `Saldo restante: ${moeda(cond.saldo_restante)}`,
+    `Tipo de entrega: ${cond.tipo_entrega || '-'}`,
+    `Prazo de entrega: ${cond.prazo_entrega || '-'}`,
+    `Taxa de entrega: ${moeda(cond.taxa_entrega)}`,
+    '',
+    `Observacao: ${d.obsCliente || '-'}`,
+    ''
+  ].join('\n');
+}
+
+function dadosOrcamentoClienteJson(){
+  const d = dadosCabecalho();
+  const t = totais();
+  const cond = condicoesComerciais(t);
+  return {
+    id_orcamento:orcamentoAtualId,
+    cliente:d.cliente,
+    contato:d.contatoCliente,
+    data_orcamento:d.dataIso,
+    itens:itens.map(item => ({produto:item.produto || '', quantidade:item.quantidade || '', prazo:item.prazo || '', valor:calcularItem(item).vendaLiquida})),
+    total_bruto:t.totalBruto,
+    desconto:t.descontoTotal,
+    total_final:t.valorFinal,
+    prazo_final:d.prazoFinal,
+    condicoes:{forma_pagamento:cond.forma_pagamento, entrada:cond.valor_entrada, saldo_restante:cond.saldo_restante, tipo_entrega:cond.tipo_entrega, prazo_entrega:cond.prazo_entrega, taxa_entrega:cond.taxa_entrega},
+    observacoes:d.obsCliente
+  };
+}
+
+function gerarControleInternoTxtCompleto(){
+  return gerarResumoControleInterno(orcamentoAtualId);
+}
+
+function dadosControleInternoJson(){
+  const d = dadosCabecalho();
+  const t = totais();
+  const cond = condicoesComerciais(t);
+  return {
+    id_orcamento:orcamentoAtualId,
+    cliente:d.cliente,
+    contato:d.contatoCliente,
+    data_orcamento:d.dataIso,
+    status:d.statusOrcamento,
+    totais:{
+      total_bruto:t.totalBruto,
+      desconto:t.descontoTotal,
+      total_final:t.valorFinal,
+      custo_total:t.custoTotal,
+      reserva_operacional_percentual:t.reservaOperacionalPercentual,
+      reserva_operacional_valor:t.reservaOperacionalValor,
+      lucro_liquido:t.lucroLiquido,
+      margem_liquida:t.margemLiquida
+    },
+    condicoes_comerciais:cond,
+    itens:itens.map(item => ({...item, calculo:calcularItem(item)})),
+    tabelas_logicas:tabelasLogicas
+  };
+}
+
+function arquivosOrcamentoCliente(){
+  const nome = gerarNomePastaOrcamento();
+  return [
+    {nome:'orcamento_cliente.html', nomeDownload:`${nome}_orcamento_cliente.html`, conteudo:documentoHtmlCompleto('orcamento_cliente', templateCliente()), tipo:'text/html;charset=utf-8'},
+    {nome:'orcamento_cliente.txt', nomeDownload:`${nome}_orcamento_cliente.txt`, conteudo:gerarOrcamentoClienteTxt(), tipo:'text/plain;charset=utf-8'},
+    {nome:'orcamento_cliente.json', nomeDownload:`${nome}_orcamento_cliente.json`, conteudo:JSON.stringify(dadosOrcamentoClienteJson(), null, 2), tipo:'application/json;charset=utf-8'}
+  ];
+}
+
+function arquivosControleInternoDossie(){
+  const nome = gerarNomePastaOrcamento();
+  return [
+    {nome:'controle_interno.html', nomeDownload:`${nome}_controle_interno.html`, conteudo:documentoHtmlCompleto('controle_interno', templateControleInterno()), tipo:'text/html;charset=utf-8'},
+    {nome:'controle_interno.txt', nomeDownload:`${nome}_controle_interno.txt`, conteudo:gerarControleInternoTxtCompleto(), tipo:'text/plain;charset=utf-8'},
+    {nome:'controle_interno.json', nomeDownload:`${nome}_controle_interno.json`, conteudo:JSON.stringify(dadosControleInternoJson(), null, 2), tipo:'application/json;charset=utf-8'}
+  ];
+}
+
+async function salvarOuBaixarArquivosOrcamento(arquivos, mensagemSucesso){
+  const nomePasta = gerarNomePastaOrcamento();
+  if(!('showDirectoryPicker' in window)){
+    arquivos.forEach(arq => baixarArquivo(arq.nomeDownload || `${nomePasta}_${arq.nome}`, arq.conteudo, arq.tipo));
+    alert(mensagemSucesso);
+    return;
+  }
+
+  try{
+    const pastaPrincipalHandle = await window.showDirectoryPicker({ mode:'readwrite' });
+    const pastaOrcamentoHandle = await pastaPrincipalHandle.getDirectoryHandle(nomePasta, { create:true });
+    for(const arq of arquivos){
+      const handle = await pastaOrcamentoHandle.getFileHandle(arq.nome, { create:true });
+      const writable = await handle.createWritable();
+      await writable.write(arq.conteudo);
+      await writable.close();
+    }
+    alert(mensagemSucesso);
+  }catch(e){
+    if(e.name !== 'AbortError') alert('Não foi possível salvar os arquivos do orçamento.');
+  }
 }
 
 function checklistOrdemServico(){
@@ -1273,16 +1440,6 @@ function dadosOrdemServico(){
     checklist_conferencia: checklists.conferencia,
     checklist_entrega: checklists.entrega
   };
-}
-
-function gerarNomeBaseOS(os = dadosOrdemServico()){
-  const id = String(os.id_orcamento || 'orcamento_em_aberto')
-    .replace(/[<>:"/\\|?*]+/g,'_')
-    .replace(/\s+/g,'_')
-    .replace(/^_+|_+$/g,'') || 'orcamento_em_aberto';
-  const cliente = normalizar(os.cliente || 'cliente') || 'cliente';
-  const data = dataISOEntrada(os.data_orcamento || hojeISO()).replaceAll('-','') || hojeISO().replaceAll('-','');
-  return `${id}_${cliente}_${data}_ordem_servico`;
 }
 
 function gerarOrdemServicoHtml(os){
@@ -1355,80 +1512,35 @@ function gerarOrdemServicoTxt(os){
 }
 
 function arquivosOrdemServico(){
-  if(!itens.length){
-    alert('Adicione pelo menos um item antes de gerar a ordem de serviço.');
-    return null;
-  }
   const os = dadosOrdemServico();
   if(!os.id_orcamento || os.id_orcamento === 'orcamento_em_aberto'){
     alert('Não foi possível garantir o ID do orçamento para gerar a ordem de serviço.');
     return null;
   }
-  const nome = gerarNomeBaseOS(os);
-  const html = '<!DOCTYPE html>' +
-    '<html lang="pt-BR">' +
-    '<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-    '<title>' + escapeHtml(nome) + '</title><style>' + estiloExportado() + '<' + '/style><' + '/head>' +
-    '<body>' + gerarOrdemServicoHtml(os) + '<' + '/body><' + '/html>';
+  const nome = gerarNomePastaOrcamento();
+  const html = documentoHtmlCompleto('ordem_servico', gerarOrdemServicoHtml(os));
   return {
     os,
     arquivos:[
-      {nome:`${nome}.html`, conteudo:html, tipo:'text/html;charset=utf-8'},
-      {nome:`${nome}.txt`, conteudo:gerarOrdemServicoTxt(os), tipo:'text/plain;charset=utf-8'},
-      {nome:`${nome}.json`, conteudo:JSON.stringify(os,null,2), tipo:'application/json;charset=utf-8'}
+      {nome:'ordem_servico.html', nomeDownload:`${nome}_ordem_servico.html`, conteudo:html, tipo:'text/html;charset=utf-8'},
+      {nome:'ordem_servico.txt', nomeDownload:`${nome}_ordem_servico.txt`, conteudo:gerarOrdemServicoTxt(os), tipo:'text/plain;charset=utf-8'},
+      {nome:'ordem_servico.json', nomeDownload:`${nome}_ordem_servico.json`, conteudo:JSON.stringify(os,null,2), tipo:'application/json;charset=utf-8'}
     ]
   };
 }
 
-function baixarArquivosOrdemServico(pacote){
-  pacote.arquivos.forEach(arq => baixarArquivo(arq.nome, arq.conteudo, arq.tipo));
-}
-
-async function obterSubpasta(handle, nome){
-  return handle.getDirectoryHandle(nome, { create:true });
-}
-
 async function gerarOrdemServico(){
+  if(!garantirOrcamentoAtualParaArquivos()) return;
   const pacote = arquivosOrdemServico();
   if(!pacote) return;
-
-  if(!('showDirectoryPicker' in window)){
-    baixarArquivosOrdemServico(pacote);
-    atualizarTextoRegistroAtual(pacote.os.id_orcamento);
-    alert(`Ordem de serviço gerada com sucesso para ${pacote.os.id_orcamento}`);
-    return;
-  }
-
-  try{
-    const pastaOrdemServicoHandle = await window.showDirectoryPicker({ mode:'readwrite' });
-
-    for(const arq of pacote.arquivos){
-      const handle = await pastaOrdemServicoHandle.getFileHandle(arq.nome, { create:true });
-      const writable = await handle.createWritable();
-      await writable.write(arq.conteudo);
-      await writable.close();
-    }
-    atualizarTextoRegistroAtual(pacote.os.id_orcamento);
-    alert(`Ordem de serviço gerada com sucesso para ${pacote.os.id_orcamento}`);
-  }catch(e){
-    if(e.name !== 'AbortError') alert('Não foi possível gerar a ordem de serviço.');
-  }
+  await salvarOuBaixarArquivosOrcamento(pacote.arquivos, `Ordem de serviço gerada com sucesso para ${pacote.os.id_orcamento}`);
+  atualizarTextoRegistroAtual(pacote.os.id_orcamento);
 }
 
-function baixarDocumento(tipo){
-  if(itens.length) salvarOrcamentoAtual(false);
-  const nome = gerarNomeArquivo(tipo);
-  const html = '<!DOCTYPE html>' +
-    '<html lang="pt-BR">' +
-    '<head>' +
-    '<meta charset="UTF-8">' +
-    '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-    '<title>' + escapeHtml(nome) + '</title>' +
-    '<style>' + estiloExportado() + '<' + '/style>' +
-    '<' + '/head>' +
-    '<body>' + gerarDocumento(tipo) + '<' + '/body>' +
-    '<' + '/html>';
-  baixarArquivo(nome, html, 'text/html;charset=utf-8');
+async function baixarDocumento(tipo){
+  if(!garantirOrcamentoAtualParaArquivos()) return;
+  const arquivos = tipo === 'interno' ? arquivosControleInternoDossie() : arquivosOrcamentoCliente();
+  await salvarOuBaixarArquivosOrcamento(arquivos, tipo === 'interno' ? 'Controle interno gerado com sucesso.' : 'Orçamento do cliente gerado com sucesso.');
 }
 
 function imprimirDocumento(){
@@ -1567,7 +1679,6 @@ function salvarOrcamentoAtual(mostrarAviso){
   salvarFormulario();
   renderizarDashboard();
   renderizarDocumento();
-  if(pastaControleHandle) salvarTxtNaPastaControle();
   if(mostrarAviso) alert(`Orçamento salvo no banco local: ${id}`);
   return id;
 }
@@ -1680,23 +1791,6 @@ function exportarBancoJson(){
   baixarArquivo(`matriz_orcamento_backup_${hojeISO()}.json`, JSON.stringify(pacote,null,2), 'application/json;charset=utf-8');
 }
 
-function nomePastaSeguro(nome){
-  return String(nome || 'sem_id').replace(/[<>:"/\\|?*]+/g,'_').trim() || 'sem_id';
-}
-
-function caminhoControleInterno(idOrcamento){
-  const data = val('data') || hojeISO();
-  return {
-    ano: data.slice(0,4) || 'sem_ano',
-    mes: data.slice(5,7) || 'sem_mes',
-    id: nomePastaSeguro(idOrcamento || 'orcamento_em_aberto')
-  };
-}
-
-function prefixoControleInterno(caminho){
-  return `${caminho.ano}_${caminho.mes}_${caminho.id}`;
-}
-
 function gerarResumoControleInterno(idOrcamento){
   const d = dadosCabecalho();
   const t = totais();
@@ -1730,105 +1824,17 @@ function gerarResumoControleInterno(idOrcamento){
 }
 
 function arquivosControleInterno(){
-  if(!itens.length){
-    alert('Adicione pelo menos um item antes de gerar o controle interno.');
-    return null;
-  }
-  if(!orcamentoAtualId) salvarOrcamentoAtual(false);
-  const id = orcamentoAtualId || gerarId('ORC');
-  orcamentoAtualId = id;
-  atualizarControleInternoTodos(id);
+  if(!garantirOrcamentoAtualParaArquivos()) return null;
+  atualizarControleInternoTodos(orcamentoAtualId);
   salvarFormulario();
-
-  const caminho = caminhoControleInterno(id);
-  const prefixo = prefixoControleInterno(caminho);
-  const itensArquivos = itens
-    .map(item => controleInternoTxt[item.id_item])
-    .filter(Boolean)
-    .map(arq => ({
-      nome: arq.nome,
-      nomeDownload: `${prefixo}_itens_${arq.nome}`,
-      conteudo: arq.conteudo,
-      tipo:'text/plain;charset=utf-8'
-    }));
-
-  return {
-    caminho,
-    resumo:{
-      nome:'controle_interno.txt',
-      nomeDownload:`${prefixo}_controle_interno.txt`,
-      conteudo:gerarResumoControleInterno(id),
-      tipo:'text/plain;charset=utf-8'
-    },
-    itens:itensArquivos
-  };
+  return {arquivos:arquivosControleInternoDossie()};
 }
 
-function exportarControleInternoTxt(){
+async function exportarControleInternoTxt(){
+  if(!garantirOrcamentoAtualParaArquivos()) return;
   const pacote = arquivosControleInterno();
   if(!pacote) return;
-  baixarArquivo(pacote.resumo.nomeDownload, pacote.resumo.conteudo, pacote.resumo.tipo);
-  pacote.itens.forEach(arq => baixarArquivo(arq.nomeDownload, arq.conteudo, arq.tipo));
-}
-
-async function salvarTxtNaPastaControle(){
-  const pacote = arquivosControleInterno();
-  if(!pacote) return false;
-  if(!pastaControleHandle) return false;
-
-  const controleHandle = await obterSubpasta(pastaControleHandle, 'controle_interno');
-  const anoHandle = await obterSubpasta(controleHandle, pacote.caminho.ano);
-  const mesHandle = await obterSubpasta(anoHandle, pacote.caminho.mes);
-  const orcamentoHandle = await obterSubpasta(mesHandle, pacote.caminho.id);
-  const itensHandle = await obterSubpasta(orcamentoHandle, 'itens');
-  await obterSubpasta(orcamentoHandle, 'aprovacoes');
-  await obterSubpasta(orcamentoHandle, 'comprovantes');
-  await obterSubpasta(orcamentoHandle, 'arte');
-
-  const resumoHandle = await orcamentoHandle.getFileHandle(pacote.resumo.nome, { create:true });
-  const resumoWritable = await resumoHandle.createWritable();
-  await resumoWritable.write(pacote.resumo.conteudo);
-  await resumoWritable.close();
-
-  for(const arq of pacote.itens){
-    const handle = await itensHandle.getFileHandle(arq.nome, { create:true });
-    const writable = await handle.createWritable();
-    await writable.write(arq.conteudo);
-    await writable.close();
-  }
-  return true;
-}
-
-async function selecionarPastaControleInterno(){
-  if(!('showDirectoryPicker' in window)){
-    alert('Este navegador não permite salvar direto em pasta. Vou baixar os TXT para você mover para controle_interno.');
-    exportarControleInternoTxt();
-    return;
-  }
-
-  try{
-    pastaControleHandle = await window.showDirectoryPicker({ mode:'readwrite' });
-    const ok = await salvarTxtNaPastaControle();
-    if(ok) alert('TXT de controle interno salvos na pasta escolhida.');
-  }catch(e){
-    if(e.name !== 'AbortError') alert('Não foi possível salvar na pasta escolhida.');
-  }
-}
-
-async function selecionarPastaControleInterno(){
-  if(!('showDirectoryPicker' in window)){
-    alert('Este navegador nao permite salvar direto em pasta. Vou baixar os TXT com prefixo de ano, mes e orcamento.');
-    exportarControleInternoTxt();
-    return;
-  }
-
-  try{
-    pastaControleHandle = await window.showDirectoryPicker({ mode:'readwrite' });
-    const ok = await salvarTxtNaPastaControle();
-    if(ok) alert('TXT de controle interno salvos em controle_interno/ANO/MES/ID_ORCAMENTO/.');
-  }catch(e){
-    if(e.name !== 'AbortError') alert('Nao foi possivel salvar na pasta escolhida.');
-  }
+  await salvarOuBaixarArquivosOrcamento(pacote.arquivos, 'Controle interno gerado com sucesso.');
 }
 
 function apagarBancoLocal(){
