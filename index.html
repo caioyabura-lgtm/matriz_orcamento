@@ -116,8 +116,9 @@
     <button id="stepBtn0" class="active" onclick="setStep(0)">1. Cliente</button>
     <button id="stepBtn1" onclick="setStep(1)">2. Itens</button>
     <button id="stepBtn2" onclick="setStep(2)">3. Matriz</button>
-    <button id="stepBtn3" onclick="setStep(3)">4. Fechamento</button>
-    <button id="stepBtn4" onclick="setStep(4)">5. Exportação</button>
+    <button id="stepBtn3" onclick="setStep(3)">4. Orçamento</button>
+    <button id="stepBtn4" onclick="setStep(4)">5. Fechamento</button>
+    <button id="stepBtn5" onclick="setStep(5)">6. Exportação</button>
   </nav>
 
   <section id="step0" class="step active">
@@ -128,7 +129,6 @@
         <div><label>Cliente</label><input id="cliente" value="Pablo - Urbam Style"></div>
         <div><label>Contato do cliente</label><input id="contatoCliente" value="+55 31 9253-7586"></div>
         <div><label>Data do orçamento</label><input id="data" type="date"></div>
-        <div><label>Data de contratação</label><input id="dataContratacao" type="date"></div>
       </div>
     </div>
   </section>
@@ -180,8 +180,8 @@
 
   <section id="step3" class="step">
     <div class="card">
-      <div class="step-indicator">Fechamento comercial e registro do motivo de descontos.</div>
-      <h2>4. Descontos, impostos e fechamento</h2>
+      <div class="step-indicator">Monte e revise o documento comercial antes da negociação final.</div>
+      <h2>4. Orçamento</h2>
       <div class="row-4">
         <div><label>Desconto global (%)</label><input id="descontoPct" type="text" inputmode="decimal" value="0"></div>
         <div><label>Desconto fixo (R$)</label><input id="descontoValor" type="text" inputmode="decimal" value="0"></div>
@@ -190,9 +190,39 @@
       </div>
       <div class="grid">
         <div><label>Prazo final</label><input id="prazoFinal" placeholder="Ex: 7 dias úteis"></div>
-        <div><label>Status do orçamento</label><select id="statusOrcamento"><option>Orçamento</option><option>Pagamento</option><option>Produção</option><option>Entrega</option><option>Faturamento</option><option>Cancelado</option></select></div>
+        <div><label>Observação para o cliente</label><textarea id="obsCliente" placeholder="Ex: pagamento de 50% na aprovação, saldo na entrega..."></textarea></div>
       </div>
-      <h3>Condições comerciais</h3>
+      <div class="summary-grid">
+        <div class="summary-card"><b>Total bruto</b><span id="totalVendaText">R$ 0,00</span></div>
+        <div class="summary-card"><b>Total de custo</b><span id="totalCustoText">R$ 0,00</span></div>
+        <div class="summary-card"><b>Desconto total</b><span id="descontoTotalText">R$ 0,00</span></div>
+        <div class="summary-card"><b>Valor final</b><span id="valorFinalText">R$ 0,00</span></div>
+        <div class="summary-card"><b>Imposto estimado</b><span id="impostoTotalText">R$ 0,00</span></div>
+        <div class="summary-card"><b>Lucro líquido</b><span id="lucroLiquidoText">R$ 0,00</span></div>
+        <div class="summary-card"><b>Margem líquida</b><span id="margemLiquidaText">0,0%</span></div>
+        <div class="summary-card"><b>Entrada média</b><span id="entradaMediaText">R$ 0,00</span></div>
+      </div>
+      <div class="actions">
+        <button class="primary" onclick="mostrarCliente()">Ver orçamento do cliente</button>
+        <button class="secondary" onclick="mostrarInterno()">Ver controle interno</button>
+        <button class="success" onclick="imprimirDocumento()">Imprimir / salvar PDF exibido</button>
+        <button class="secondary" onclick="baixarDocumento(modo)">Baixar HTML exibido</button>
+      </div>
+      <p class="small">Nome sugerido: <span id="nomeArquivoAtual">-</span></p>
+      <p class="small">Orçamento atual: <span id="ultimoRegistroText">ainda não salvo</span></p>
+      <div id="documento" class="preview-area"></div>
+    </div>
+  </section>
+
+  <section id="step4" class="step">
+    <div class="card">
+      <div class="step-indicator">Registre aprovação, pagamento e entrega depois da negociação concluída.</div>
+      <h2>5. Fechamento</h2>
+      <div class="grid">
+        <div><label>Status do orçamento</label><select id="statusOrcamento"><option>Orçamento</option><option>Pagamento</option><option>Produção</option><option>Entrega</option><option>Faturamento</option><option>Cancelado</option></select></div>
+        <div><label>Data de contratação</label><input id="dataContratacao" type="date"></div>
+      </div>
+      <h3>Negociação e aprovação</h3>
       <div class="row-4">
         <div><label>Valor da entrada / sinal</label><input id="valorEntrada" type="text" inputmode="decimal" placeholder="Ex: 50,00"></div>
         <div><label>Entrada (%)</label><input id="percentualEntrada" type="text" inputmode="decimal" placeholder="Ex: 50"></div>
@@ -214,36 +244,27 @@
       <textarea id="enderecoEntrega" placeholder="Endereço completo, referência ou observação logística"></textarea>
       <label>Observação comercial específica</label>
       <textarea id="condicoesEspecificas" placeholder="Condição específica deste orçamento"></textarea>
-      <label>Observação para o cliente</label>
-      <textarea id="obsCliente" placeholder="Ex: pagamento de 50% na aprovação, saldo na entrega..."></textarea>
-
-      <div class="summary-grid">
-        <div class="summary-card"><b>Total bruto</b><span id="totalVendaText">R$ 0,00</span></div>
-        <div class="summary-card"><b>Total de custo</b><span id="totalCustoText">R$ 0,00</span></div>
-        <div class="summary-card"><b>Desconto total</b><span id="descontoTotalText">R$ 0,00</span></div>
-        <div class="summary-card"><b>Valor final</b><span id="valorFinalText">R$ 0,00</span></div>
-        <div class="summary-card"><b>Imposto estimado</b><span id="impostoTotalText">R$ 0,00</span></div>
-        <div class="summary-card"><b>Lucro líquido</b><span id="lucroLiquidoText">R$ 0,00</span></div>
-        <div class="summary-card"><b>Margem líquida</b><span id="margemLiquidaText">0,0%</span></div>
-        <div class="summary-card"><b>Entrada média</b><span id="entradaMediaText">R$ 0,00</span></div>
-      </div>
     </div>
   </section>
 
-  <section id="step4" class="step">
+  <section id="step5" class="step">
     <div class="card">
-      <div class="step-indicator">Exporte o documento comercial e gere a ordem de serviço operacional.</div>
-      <h2>5. Exportação</h2>
+      <div class="step-indicator">Gere os arquivos finais do orçamento aprovado.</div>
+      <h2>6. Exportação</h2>
       <div class="actions">
-        <button class="primary" onclick="mostrarCliente()">Ver orçamento do cliente</button>
-        <button class="secondary" onclick="mostrarInterno()">Ver controle interno</button>
-        <button class="success" onclick="imprimirDocumento()">Imprimir / salvar PDF exibido</button>
-        <button class="secondary" onclick="baixarDocumento(modo)">Baixar HTML exibido</button>
         <button class="primary" onclick="gerarOrdemServico()">Gerar ordem de serviço</button>
+        <button class="primary" onclick="exportarBancoJson()">Exportar JSON</button>
+        <select id="abaCsvExport">
+          <option value="orcamentos">orcamentos</option>
+          <option value="itens">itens</option>
+          <option value="clientes">clientes</option>
+          <option value="descontos">descontos</option>
+          <option value="impostos">impostos</option>
+        </select>
+        <button class="secondary" onclick="exportarAbaCsv('abaCsvExport')">Exportar CSV</button>
+        <button class="success" onclick="exportarControleInternoTxt()">Exportar TXT controle interno</button>
       </div>
-      <p class="small">Nome sugerido: <span id="nomeArquivoAtual">-</span></p>
-      <p class="small">Orçamento atual: <span id="ultimoRegistroText">ainda não salvo</span></p>
-      <div id="documento" class="preview-area"></div>
+      <p class="small">Orçamento atual: <span id="ultimoRegistroExportText">ainda não salvo</span></p>
     </div>
   </section>
 
@@ -411,13 +432,13 @@ function diasEntre(inicioIso, fimIso){
 }
 
 function setStep(i){
-  currentStep = Math.max(0, Math.min(4, Number(i) || 0));
-  for(let n=0;n<=4;n++){
+  currentStep = Math.max(0, Math.min(5, Number(i) || 0));
+  for(let n=0;n<=5;n++){
     $(`step${n}`).classList.toggle('active', n === currentStep);
     $(`stepBtn${n}`).classList.toggle('active', n === currentStep);
   }
   $('prevBtn').disabled = currentStep === 0;
-  $('nextBtn').disabled = currentStep === 4;
+  $('nextBtn').disabled = currentStep === 5;
   salvarFormulario();
 }
 
@@ -913,7 +934,14 @@ function gerarDocumento(tipo){
 function renderizarDocumento(){
   $('documento').innerHTML = gerarDocumento(modo);
   $('nomeArquivoAtual').textContent = gerarNomeArquivo(modo);
-  $('ultimoRegistroText').textContent = orcamentoAtualId || 'ainda não salvo';
+  atualizarTextoRegistroAtual(orcamentoAtualId || 'ainda não salvo');
+}
+
+function atualizarTextoRegistroAtual(texto){
+  ['ultimoRegistroText','ultimoRegistroExportText'].forEach(id => {
+    const el = $(id);
+    if(el) el.textContent = texto;
+  });
 }
 
 function mostrarCliente(){ modo = 'cliente'; salvarFormulario(); renderizarDocumento(); }
@@ -1145,7 +1173,7 @@ async function gerarOrdemServico(){
 
   if(!('showDirectoryPicker' in window)){
     baixarArquivosOrdemServico(pacote);
-    $('ultimoRegistroText').textContent = pacote.os.id_orcamento;
+    atualizarTextoRegistroAtual(pacote.os.id_orcamento);
     alert(`Ordem de serviço gerada com sucesso para ${pacote.os.id_orcamento}`);
     return;
   }
@@ -1166,7 +1194,7 @@ async function gerarOrdemServico(){
       await writable.write(arq.conteudo);
       await writable.close();
     }
-    $('ultimoRegistroText').textContent = pacote.os.id_orcamento;
+    atualizarTextoRegistroAtual(pacote.os.id_orcamento);
     alert(`Ordem de serviço gerada com sucesso para ${pacote.os.id_orcamento}`);
   }catch(e){
     if(e.name !== 'AbortError') alert('Não foi possível gerar a ordem de serviço.');
@@ -1415,8 +1443,13 @@ function csvEscape(v){
   return /[",\n;]/.test(s) ? `"${s.replaceAll('"','""')}"` : s;
 }
 
-function exportarAbaCsv(){
-  const aba = val('abaCsv');
+function atualizarBancoAntesDeExportar(){
+  if(itens.length) salvarOrcamentoAtual(false);
+}
+
+function exportarAbaCsv(selectId = 'abaCsv'){
+  atualizarBancoAntesDeExportar();
+  const aba = val(selectId);
   const headers = schemas[aba];
   const linhas = [headers.join(';')];
   banco[aba].forEach(row => linhas.push(headers.map(h => csvEscape(row[h])).join(';')));
@@ -1424,6 +1457,7 @@ function exportarAbaCsv(){
 }
 
 function exportarBancoJson(){
+  atualizarBancoAntesDeExportar();
   const pacote = {exportado_em:new Date().toISOString(), schemas, dados:banco};
   baixarArquivo(`matriz_orcamento_backup_${hojeISO()}.json`, JSON.stringify(pacote,null,2), 'application/json;charset=utf-8');
 }
