@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Matriz de Orçamento — Artes Gráficas</title>
+  <style>
+    :root{
+      --bg:#f4f1ed;--card:#fff;--text:#1f211f;--muted:#5f6f5b;--line:rgba(132,118,108,.35);
+      --dark:#1f211f;--green-light:#91b488;--green-dark:#5f6f5b;--green-black:#444b42;
+      --bluegreen:#668882;--beige:#d6b7a1;--rose:#cd9ba1;--warning:#fff4d6;
+      --danger-soft:#ffe6e6;--ok-soft:#e6f4ea
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+    header{background:var(--dark);color:#fff;padding:18px 28px}
+    header h1{margin:0 0 4px;font-size:22px}
+    header p{margin:0;font-size:13px;color:#e6e0db}
+    main{max-width:1180px;margin:0 auto;padding:22px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 8px 22px rgba(31,33,31,.08);margin-bottom:16px}
+    details.emissor-config{margin-bottom:16px}
+    details.emissor-config summary{cursor:pointer;font-weight:bold;background:#f7efe5;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+    h2{margin:0 0 14px;font-size:18px}
+    h3{margin:0 0 10px;font-size:15px;color:var(--green-black)}
+    label{display:block;font-size:12px;font-weight:bold;margin:10px 0 5px;color:var(--green-black)}
+    input,select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:14px;background:#fff;color:var(--text)}
+    textarea{min-height:74px;resize:vertical}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .steps-nav{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 16px}
+    .steps-nav button{flex:1;min-width:130px;background:var(--beige);color:var(--dark);border:1px solid var(--line);border-radius:999px}
+    .steps-nav button.active{background:var(--green-dark);color:white}
+    .steps-nav button:hover{background:var(--green-light);color:white}
+    .view-nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+    .view-nav button{background:var(--beige);color:var(--dark);border:1px solid var(--line)}
+    .view-nav button.active{background:var(--green-black);color:#fff}
+    .app-page{display:none}
+    .app-page.active{display:block}
+    .step{display:none}
+    .step.active{display:block}
+    .step-indicator{color:var(--muted);font-size:13px;margin-bottom:12px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
+    button{border:0;border-radius:8px;padding:10px 14px;cursor:pointer;font-weight:bold;font-size:13px}
+    button:disabled{opacity:.45;cursor:not-allowed}
+    .primary{background:var(--green-dark);color:#fff}
+    .secondary{background:var(--beige);color:var(--dark)}
+    .success{background:var(--bluegreen);color:#fff}
+    .danger{background:var(--rose);color:var(--dark)}
+    table{width:100%;border-collapse:collapse;font-size:13px;background:#fff}
+    th{background:var(--green-black);color:#fff;text-align:left;padding:9px;border:1px solid var(--green-black)}
+    td{padding:8px;border:1px solid var(--line);vertical-align:top}
+    tbody tr:nth-child(even){background:#f8f5f1}
+    .money{white-space:nowrap}
+    .small{font-size:12px;color:var(--muted)}
+    .status-ok{background:var(--ok-soft)!important}
+    .status-alert{background:var(--warning)!important}
+    .status-risk{background:var(--danger-soft)!important}
+    .summary-grid,.dashboard-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+    .summary-card,.dashboard-card{background:#f7efe5;border:1px solid var(--line);border-radius:12px;padding:12px;min-height:76px}
+    .summary-card b,.dashboard-card b{display:block;font-size:12px;color:var(--green-black);margin-bottom:6px}
+    .summary-card span,.dashboard-card span{font-size:18px;font-weight:bold}
+    .table-scroll{overflow:auto;max-height:340px;border:1px solid var(--line);border-radius:10px}
+    .preview-area{background:#fff;border:1px solid var(--line);border-radius:12px;padding:22px;margin-top:16px;max-height:520px;overflow:auto}
+    .doc-header{text-align:center;margin-bottom:20px}
+    .doc-header h2{margin:0 0 8px;font-size:20px}
+    .doc-info{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;font-size:13px}
+    .doc-total{margin:12px 0;padding:10px;background:#f7efe5;border:1px solid var(--line);border-radius:8px;font-size:13px}
+    .print-document{display:none}
+    .muted-box{background:#f7efe5;border:1px solid var(--line);border-radius:10px;padding:10px}
+    .conditional-box{display:none;background:#fff4d6;border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:12px}
+    .conditional-box.active{display:block}
+    .check-line{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--green-black);margin:8px 0}
+    .check-line input{width:auto;margin-top:2px}
+    @media(max-width:900px){.dashboard-grid,.summary-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:820px){.grid,.row-3,.row-4,.doc-info{grid-template-columns:1fr}}
+    @media(max-width:560px){main{padding:12px}.dashboard-grid,.summary-grid{grid-template-columns:1fr}.steps-nav{flex-wrap:nowrap;overflow-x:auto}.steps-nav button{flex:0 0 150px}}
+    @media print{
+      body{background:#fff!important}
+      body *{visibility:hidden!important}
+      #printDocument,#printDocument *{visibility:visible!important}
+      #printDocument{display:block!important;position:absolute!important;left:0!important;top:0!important;width:100%!important;padding:0!important;margin:0!important;background:#fff!important;color:#000!important}
+      #printDocument table{page-break-inside:auto;border-collapse:collapse;width:100%;font-size:11px}
+      #printDocument tr{page-break-inside:avoid}
+      #printDocument th{background:#444b42!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      #printDocument td,#printDocument th{border:1px solid #999!important;padding:6px!important}
+      #printDocument .doc-total{background:#f7efe5!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      @page{size:A4;margin:12mm}
+    }
+  </style>
+</head>
+<body>
+<header class="no-print">
+  <h1>Matriz de Orçamento — Artes Gráficas</h1>
+  <p>Sistema offline: orçamento, controle interno, banco local, exportação e dashboard.</p>
+</header>
+
+<main class="no-print">
+  <nav class="view-nav" aria-label="Áreas do sistema">
+    <button id="viewOrcamentoBtn" class="active" onclick="mostrarPagina('orcamento')">Orçamento</button>
+    <button id="viewDashboardBtn" onclick="mostrarPagina('dashboard')">Dashboard</button>
+  </nav>
+
+  <section id="orcamentoPage" class="app-page active">
+  <details class="emissor-config">
+    <summary>Configurações do emissor</summary>
+    <div class="grid">
+      <div><label>Emissor</label><input id="emissorNome" value="Caio Rodrigues"></div>
+      <div><label>CNPJ</label><input id="emissorCnpj" value="59.508.939/0001-04"></div>
+      <div><label>PIX</label><input id="emissorPix" value="31 971526184"></div>
+      <div><label>Telefone</label><input id="emissorTelefone" value="+55 31 97152-6184"></div>
+    </div>
+  </details>
+
+  <nav class="steps-nav" aria-label="Etapas do orçamento">
+    <button id="stepBtn0" class="active" onclick="setStep(0)">1. Cliente</button>
+    <button id="stepBtn1" onclick="setStep(1)">2. Itens</button>
+    <button id="stepBtn2" onclick="setStep(2)">3. Matriz</button>
+    <button id="stepBtn3" onclick="setStep(3)">4. Fechamento</button>
+    <button id="stepBtn4" onclick="setStep(4)">5. Exportação</button>
+  </nav>
+
+  <section id="step0" class="step active">
+    <div class="card">
+      <div class="step-indicator">Dados básicos do orçamento.</div>
+      <h2>1. Dados do cliente</h2>
+      <div class="grid">
+        <div><label>Cliente</label><input id="cliente" value="Pablo - Urbam Style"></div>
+        <div><label>Contato do cliente</label><input id="contatoCliente" value="+55 31 9253-7586"></div>
+        <div><label>Data do orçamento</label><input id="data" type="date"></div>
+        <div><label>Data de contratação</label><input id="dataContratacao" type="date"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="step1" class="step">
+    <div class="card">
+      <div class="step-indicator">Adicione os produtos, serviços e entregas.</div>
+      <h2>2. Adicionar item</h2>
+      <div class="row-4">
+        <div><label>Produto</label><input id="produto" placeholder="Ex: Mini Cartão Couchê 250g UV"></div>
+        <div><label>Categoria</label><input id="categoria" placeholder="Ex: Impresso, design, entrega"></div>
+        <div><label>Quantidade</label><input id="quantidade" placeholder="Ex: 500 unidades"></div>
+        <div><label>Prazo</label><input id="prazo" placeholder="Ex: 2 dias úteis"></div>
+      </div>
+      <div class="row-4">
+        <div><label>Status</label><select id="status"><option>Orçamento</option><option>Pagamento</option><option>Produção</option><option>Entrega</option><option>Faturamento</option></select></div>
+        <div><label>Fornecedor</label><input id="fornecedor" placeholder="Ex: Zap Gráfica"></div>
+        <div><label>Custo fornecedor</label><input id="custo" type="text" inputmode="decimal" placeholder="Ex: 46,99"></div>
+        <div><label>Preço de venda</label><input id="venda" type="text" inputmode="decimal" placeholder="Ex: 94,00"></div>
+      </div>
+      <div class="row-3">
+        <div><label>Entrada exigida (%)</label><input id="entradaPct" type="text" inputmode="decimal" value="50"></div>
+        <div><label>Desconto do item (R$)</label><input id="descontoItem" type="text" inputmode="decimal" value="0"></div>
+        <div><label>Imposto estimado do item (%)</label><input id="impostoItemPct" type="text" inputmode="decimal" value="0"></div>
+      </div>
+      <label>Observação interna</label>
+      <textarea id="obsInterna" placeholder="Ex: fornecedor, link, campanha, risco de prazo..."></textarea>
+      <div id="zapCustosBox" class="conditional-box">
+        <b>Fornecedor Zap Gráfica detectado</b>
+        <label class="check-line"><input id="incluirGabaritagemZap" type="checkbox" checked disabled> Incluir gabaritagem obrigatória Zap Gráfica — R$ 20,00</label>
+        <label class="check-line"><input id="incluirArteZap" type="checkbox"> Incluir arte gráfica promocional — R$ 20,00</label>
+        <p class="small">A gabaritagem será registrada como item separado na matriz.</p>
+      </div>
+      <div class="actions">
+        <button class="primary" onclick="adicionarItem()">Adicionar item</button>
+        <button class="secondary" onclick="carregarExemplo()">Carregar exemplo</button>
+        <button class="danger" onclick="limparItens()">Limpar itens</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="step2" class="step">
+    <div class="card">
+      <div class="step-indicator">Revise custos, margens e riscos antes de fechar.</div>
+      <h2>3. Itens da matriz</h2>
+      <div id="tabelaEdicao" class="table-scroll"></div>
+    </div>
+  </section>
+
+  <section id="step3" class="step">
+    <div class="card">
+      <div class="step-indicator">Fechamento comercial e registro do motivo de descontos.</div>
+      <h2>4. Descontos, impostos e fechamento</h2>
+      <div class="row-4">
+        <div><label>Desconto global (%)</label><input id="descontoPct" type="text" inputmode="decimal" value="0"></div>
+        <div><label>Desconto fixo (R$)</label><input id="descontoValor" type="text" inputmode="decimal" value="0"></div>
+        <div><label>Motivo do desconto</label><select id="motivoDesconto"><option value="">Sem desconto</option><option>Cliente recorrente</option><option>Fechamento rápido</option><option>Volume</option><option>Negociação</option><option>Erro de orçamento</option><option>Campanha</option><option>Arredondamento</option><option>Cortesia</option><option>Outro</option></select></div>
+        <div><label>Imposto global estimado (%)</label><input id="impostoPct" type="text" inputmode="decimal" value="0"></div>
+      </div>
+      <div class="grid">
+        <div><label>Prazo final</label><input id="prazoFinal" placeholder="Ex: 7 dias úteis"></div>
+        <div><label>Status do orçamento</label><select id="statusOrcamento"><option>Orçamento</option><option>Pagamento</option><option>Produção</option><option>Entrega</option><option>Faturamento</option><option>Cancelado</option></select></div>
+      </div>
+      <h3>Condições comerciais</h3>
+      <div class="row-4">
+        <div><label>Valor da entrada / sinal</label><input id="valorEntrada" type="text" inputmode="decimal" placeholder="Ex: 50,00"></div>
+        <div><label>Entrada (%)</label><input id="percentualEntrada" type="text" inputmode="decimal" placeholder="Ex: 50"></div>
+        <div><label>Entrada recebida</label><select id="entradaRecebida"><option>Não</option><option>Sim</option></select></div>
+        <div><label>Data recebimento entrada</label><input id="dataRecebimentoEntrada" type="date"></div>
+      </div>
+      <div class="row-3">
+        <div><label>Forma de pagamento</label><input id="formaPagamento" placeholder="Ex: PIX, cartão, dinheiro"></div>
+        <div><label>Prazo de pagamento</label><input id="prazoPagamento" placeholder="Ex: saldo na entrega"></div>
+        <div><label>Saldo restante</label><input id="saldoRestante" type="text" inputmode="decimal" readonly></div>
+      </div>
+      <div class="row-4">
+        <div><label>Tipo de entrega</label><select id="tipoEntrega"><option>Retirada</option><option>Entrega local</option><option>Motoboy</option><option>Correios</option><option>Outro</option></select></div>
+        <div><label>Taxa de entrega</label><input id="taxaEntrega" type="text" inputmode="decimal" value="0"></div>
+        <div><label>Prazo de entrega</label><input id="prazoEntrega" placeholder="Ex: até 2 dias úteis"></div>
+        <div><label>Responsável entrega</label><input id="responsavelEntrega" placeholder="Ex: Caio, motoboy, cliente"></div>
+      </div>
+      <label>Endereço de entrega</label>
+      <textarea id="enderecoEntrega" placeholder="Endereço completo, referência ou observação logística"></textarea>
+      <label>Observação comercial específica</label>
+      <textarea id="condicoesEspecificas" placeholder="Condição específica deste orçamento"></textarea>
+      <label>Observação para o cliente</label>
+      <textarea id="obsCliente" placeholder="Ex: pagamento de 50% na aprovação, saldo na entrega..."></textarea>
+
+      <div class="summary-grid">
+        <div class="summary-card"><b>Total bruto</b><span id="totalVendaText">R$ 0,00</span></div>
+        <div class="summary-card"><b>Total de custo</b><span id="totalCustoText">R$ 0,00</span></div>
+        <div class="summary-card"><b>Desconto total</b><span id="descontoTotalText">R$ 0,00</span></div>
+        <div class="summary-card"><b>Valor final</b><span id="valorFinalText">R$ 0,00</span></div>
+        <div class="summary-card"><b>Imposto estimado</b><span id="impostoTotalText">R$ 0,00</span></div>
+        <div class="summary-card"><b>Lucro líquido</b><span id="lucroLiquidoText">R$ 0,00</span></div>
+        <div class="summary-card"><b>Margem líquida</b><span id="margemLiquidaText">0,0%</span></div>
+        <div class="summary-card"><b>Entrada média</b><span id="entradaMediaText">R$ 0,00</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="step4" class="step">
+    <div class="card">
+      <div class="step-indicator">Exporte o documento comercial e gere a ordem de serviço operacional.</div>
+      <h2>5. Exportação</h2>
+      <div class="actions">
+        <button class="primary" onclick="mostrarCliente()">Ver orçamento do cliente</button>
+        <button class="secondary" onclick="mostrarInterno()">Ver controle interno</button>
+        <button class="success" onclick="imprimirDocumento()">Imprimir / salvar PDF exibido</button>
+        <button class="secondary" onclick="baixarDocumento(modo)">Baixar HTML exibido</button>
+        <button class="primary" onclick="gerarOrdemServico()">Gerar ordem de serviço</button>
+      </div>
+      <p class="small">Nome sugerido: <span id="nomeArquivoAtual">-</span></p>
+      <p class="small">Orçamento atual: <span id="ultimoRegistroText">ainda não salvo</span></p>
+      <div id="documento" class="preview-area"></div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="secondary" id="prevBtn" onclick="prevStep()">Anterior</button>
+    <button class="primary" id="nextBtn" onclick="nextStep()">Próximo</button>
+  </div>
+
+  </section>
+
+  <section id="dashboardPage" class="app-page">
+  <div class="card">
+    <h2>Dashboard offline</h2>
+    <p class="small" id="bancoStatusText">Banco local carregado no navegador.</p>
+    <div class="dashboard-grid">
+      <div class="dashboard-card"><b>Orçamentos hoje</b><span id="dashDia">0</span></div>
+      <div class="dashboard-card"><b>Orçamentos na semana</b><span id="dashSemana">0</span></div>
+      <div class="dashboard-card"><b>Orçamentos no mês</b><span id="dashMes">0</span></div>
+      <div class="dashboard-card"><b>Total vendido</b><span id="dashTotalVendido">R$ 0,00</span></div>
+      <div class="dashboard-card"><b>Lucro estimado</b><span id="dashLucro">R$ 0,00</span></div>
+      <div class="dashboard-card"><b>Margem média</b><span id="dashMargem">0,0%</span></div>
+      <div class="dashboard-card"><b>Melhor cliente</b><span id="dashCliente">-</span></div>
+      <div class="dashboard-card"><b>Produto mais vendido</b><span id="dashProduto">-</span></div>
+    </div>
+    <div class="grid" style="margin-top:14px">
+      <div class="muted-box">
+        <h3>Descontos por motivo</h3>
+        <div id="dashDescontos" class="small">Nenhum desconto registrado.</div>
+      </div>
+      <div class="muted-box">
+        <h3>Dados para planilha</h3>
+        <p class="small">Use CSV para colar/importar na planilha. Use JSON para backup completo.</p>
+        <div class="actions" style="margin-top:0">
+          <button class="primary" onclick="exportarBancoJson()">Exportar JSON</button>
+          <select id="abaCsv">
+            <option value="orcamentos">orcamentos</option>
+            <option value="itens">itens</option>
+            <option value="clientes">clientes</option>
+            <option value="descontos">descontos</option>
+            <option value="impostos">impostos</option>
+          </select>
+          <button class="secondary" onclick="exportarAbaCsv()">Exportar CSV</button>
+          <button class="success" onclick="exportarControleInternoTxt()">Exportar TXT controle interno</button>
+          <button class="secondary" onclick="selecionarPastaControleInterno()">Salvar TXT na pasta</button>
+          <button class="danger" onclick="apagarBancoLocal()">Zerar banco local</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </section>
+</main>
+
+<section id="printDocument" class="print-document"></section>
+
+<script>
+'use strict';
+
+let itens = [];
+let modo = 'cliente';
+let currentStep = 0;
+let orcamentoAtualId = '';
+
+const STORAGE_ITENS_KEY = 'matriz_orcamento_itens_v4';
+const STORAGE_DB_KEY = 'matriz_orcamento_banco_local_v4';
+const STORAGE_FORM_KEY = 'matriz_orcamento_form_v4';
+const STORAGE_CONTROLE_TXT_KEY = 'matriz_orcamento_controle_txt_v1';
+
+const schemas = {
+  orcamentos: ['id_orcamento','data_orcamento','semana','mes','cliente','contato','status','data_contratacao','dias_ate_contratacao','total_bruto','desconto_valor','desconto_percentual','motivo_desconto','total_final','custo_total','impostos_total','lucro_liquido','margem_liquida','prazo_final','valor_entrada','percentual_entrada','entrada_recebida','data_recebimento_entrada','forma_pagamento','prazo_pagamento','saldo_restante','tipo_entrega','endereco_entrega','taxa_entrega','prazo_entrega','responsavel_entrega','condicoes_especificas','observacoes'],
+  itens: ['id_item','id_orcamento','produto','categoria','quantidade','fornecedor','custo_fornecedor','preco_venda','desconto_item','imposto_estimado','lucro_bruto','lucro_liquido','margem_item','status_item','observacao_interna'],
+  clientes: ['id_cliente','nome','telefone','total_orcamentos','total_contratacoes','total_gasto','lucro_gerado','ticket_medio','tempo_medio_contratacao','classificacao_cliente','observacoes'],
+  descontos: ['id_desconto','id_orcamento','data','valor','percentual','motivo','tipo_desconto','autorizado_por','observacoes'],
+  impostos: ['id_imposto','id_orcamento','id_item','tipo_imposto','base_calculo','aliquota','valor','observacoes']
+};
+
+let banco = {
+  orcamentos: [],
+  itens: [],
+  clientes: [],
+  descontos: [],
+  impostos: []
+};
+
+let controleInternoTxt = {};
+let pastaControleHandle = null;
+let pastaOrdemServicoHandle = null;
+
+const camposPersistentes = [
+  'emissorNome','emissorCnpj','emissorPix','emissorTelefone','cliente','contatoCliente','data','dataContratacao',
+  'descontoPct','descontoValor','motivoDesconto','impostoPct','prazoFinal','statusOrcamento',
+  'valorEntrada','percentualEntrada','entradaRecebida','dataRecebimentoEntrada','formaPagamento','prazoPagamento',
+  'saldoRestante','tipoEntrega','enderecoEntrega','taxaEntrega','prazoEntrega','responsavelEntrega','condicoesEspecificas',
+  'obsCliente'
+];
+
+const $ = id => document.getElementById(id);
+const moeda = n => Number(n || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const val = id => $(id)?.value || '';
+
+function num(id){
+  const bruto = String($(id)?.value || '').trim();
+  if(!bruto) return 0;
+  const normalizado = bruto.includes(',')
+    ? bruto.replace(/\./g,'').replace(',','.')
+    : bruto;
+  const valor = Number(normalizado);
+  return Number.isFinite(valor) ? valor : 0;
+}
+
+function setValorCampo(id, valor){
+  const el = $(id);
+  if(el) el.value = valor ?? '';
+}
+
+function escapeHtml(v){
+  return String(v ?? '')
+    .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+    .replaceAll('"','&quot;').replaceAll("'","&#039;");
+}
+
+function hojeISO(){ return new Date().toISOString().slice(0,10); }
+
+function dataBR(iso){
+  if(!iso) return '';
+  const p = String(iso).split('-');
+  return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
+}
+
+function gerarId(prefixo){
+  return `${prefixo}_${new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14)}_${Math.random().toString(36).slice(2,7).toUpperCase()}`;
+}
+
+function normalizar(txt){
+  return String(txt || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+}
+
+function fornecedorEhZapGrafica(fornecedor){
+  return normalizar(fornecedor).includes('zap_grafica');
+}
+
+function atualizarBlocoZap(){
+  const ativo = fornecedorEhZapGrafica(val('fornecedor'));
+  $('zapCustosBox')?.classList.toggle('active', ativo);
+  if(ativo && $('incluirGabaritagemZap')) $('incluirGabaritagemZap').checked = true;
+}
+
+function semanaISO(iso){
+  const data = new Date(`${iso}T12:00:00`);
+  if(Number.isNaN(data.getTime())) return '';
+  const quinta = new Date(data);
+  quinta.setDate(data.getDate() + 4 - (data.getDay() || 7));
+  const anoInicio = new Date(quinta.getFullYear(),0,1);
+  const semana = Math.ceil((((quinta - anoInicio) / 86400000) + 1) / 7);
+  return `${quinta.getFullYear()}-S${String(semana).padStart(2,'0')}`;
+}
+
+function diasEntre(inicioIso, fimIso){
+  if(!inicioIso || !fimIso) return '';
+  const inicio = new Date(`${inicioIso}T00:00:00`);
+  const fim = new Date(`${fimIso}T00:00:00`);
+  if(Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime())) return '';
+  return Math.max(0, Math.round((fim - inicio) / 86400000));
+}
+
+function setStep(i){
+  currentStep = Math.max(0, Math.min(4, Number(i) || 0));
+  for(let n=0;n<=4;n++){
+    $(`step${n}`).classList.toggle('active', n === currentStep);
+    $(`stepBtn${n}`).classList.toggle('active', n === currentStep);
+  }
+  $('prevBtn').disabled = currentStep === 0;
+  $('nextBtn').disabled = currentStep === 4;
+  salvarFormulario();
+}
+
+function haRascunhoDeItem(){
+  return ['produto','categoria','quantidade','prazo','fornecedor','custo','venda','obsInterna']
+    .some(id => String(val(id)).trim() !== '');
+}
+
+function nextStep(){
+  // Na etapa de itens, o usuário costuma preencher os campos e clicar em "Próximo".
+  // Por isso, registramos o rascunho automaticamente antes de abrir a matriz.
+  if(currentStep === 1 && haRascunhoDeItem()){
+    if(!adicionarItem(false)) return;
+    return;
+  }
+  setStep(currentStep + 1);
+}
+function prevStep(){ setStep(currentStep - 1); }
+
+function mostrarPagina(pagina){
+  const dashboardAtivo = pagina === 'dashboard';
+  $('orcamentoPage').classList.toggle('active', !dashboardAtivo);
+  $('dashboardPage').classList.toggle('active', dashboardAtivo);
+  $('viewOrcamentoBtn').classList.toggle('active', !dashboardAtivo);
+  $('viewDashboardBtn').classList.toggle('active', dashboardAtivo);
+  if(dashboardAtivo) renderizarDashboard();
+}
+
+function salvarFormulario(){
+  const campos = {};
+  camposPersistentes.forEach(id => campos[id] = val(id));
+  localStorage.setItem(STORAGE_FORM_KEY, JSON.stringify({campos,currentStep,modo,orcamentoAtualId}));
+}
+
+function carregarFormulario(){
+  try{
+    const salvo = JSON.parse(localStorage.getItem(STORAGE_FORM_KEY) || '{}');
+    Object.entries(salvo.campos || {}).forEach(([id,v]) => { if($(id)) $(id).value = v; });
+    currentStep = Number.isInteger(salvo.currentStep) ? salvo.currentStep : 0;
+    modo = salvo.modo === 'interno' ? 'interno' : 'cliente';
+    orcamentoAtualId = salvo.orcamentoAtualId || '';
+  }catch(e){}
+  if(!val('data')) $('data').value = hojeISO();
+}
+
+function ativarPersistencia(){
+  camposPersistentes.forEach(id => {
+    const el = $(id);
+    if(!el) return;
+    ['input','change'].forEach(evt => el.addEventListener(evt, () => {
+      salvarFormulario();
+      if(id === 'statusOrcamento') atualizarControleInternoTodos(orcamentoAtualId);
+      renderizar();
+    }));
+  });
+  $('fornecedor')?.addEventListener('input', atualizarBlocoZap);
+  $('fornecedor')?.addEventListener('change', atualizarBlocoZap);
+  $('incluirArteZap')?.addEventListener('change', salvarFormulario);
+}
+
+function salvarItens(){
+  localStorage.setItem(STORAGE_ITENS_KEY, JSON.stringify(itens));
+  salvarFormulario();
+}
+
+function carregarItens(){
+  try{ itens = JSON.parse(localStorage.getItem(STORAGE_ITENS_KEY) || '[]'); }
+  catch(e){ itens = []; }
+  itens.forEach(item => {
+    if(!item.id_item) item.id_item = item.tmp_id || gerarId('ITEM');
+  });
+}
+
+function salvarBanco(){
+  localStorage.setItem(STORAGE_DB_KEY, JSON.stringify(banco));
+}
+
+function carregarBanco(){
+  try{
+    const salvo = JSON.parse(localStorage.getItem(STORAGE_DB_KEY) || '{}');
+    Object.keys(banco).forEach(aba => banco[aba] = Array.isArray(salvo[aba]) ? salvo[aba] : []);
+  }catch(e){ banco = {orcamentos:[],itens:[],clientes:[],descontos:[],impostos:[]}; }
+}
+
+function salvarControleInternoTxt(){
+  localStorage.setItem(STORAGE_CONTROLE_TXT_KEY, JSON.stringify(controleInternoTxt));
+}
+
+function carregarControleInternoTxt(){
+  try{ controleInternoTxt = JSON.parse(localStorage.getItem(STORAGE_CONTROLE_TXT_KEY) || '{}'); }
+  catch(e){ controleInternoTxt = {}; }
+}
+
+function nomeArquivoControleItem(item){
+  const idItem = item.id_item || item.tmp_id || gerarId('ITEM');
+  const produto = normalizar(item.produto || 'produto') || 'produto';
+  return `${idItem}_${produto}.txt`;
+}
+
+function gerarConteudoControleItem(item, idOrcamento){
+  const d = dadosCabecalho();
+  const c = calcularItem(item);
+  const cond = condicoesComerciais();
+  return [
+    'CONTROLE INTERNO - ITEM DO ORCAMENTO',
+    '',
+    `ID do orcamento: ${idOrcamento || orcamentoAtualId || 'orcamento_em_aberto'}`,
+    `ID do item: ${item.id_item || item.tmp_id || ''}`,
+    `Atualizado em: ${new Date().toLocaleString('pt-BR')}`,
+    '',
+    `Cliente: ${d.cliente}`,
+    `Contato: ${d.contatoCliente}`,
+    `Data do orcamento: ${dataBR(d.dataIso)}`,
+    '',
+    'CONDICOES COMERCIAIS',
+    `Valor entrada/sinal: ${moeda(cond.valor_entrada)}`,
+    `Percentual entrada: ${cond.percentual_entrada}%`,
+    `Entrada recebida: ${cond.entrada_recebida}`,
+    `Data recebimento entrada: ${dataBR(cond.data_recebimento_entrada) || '-'}`,
+    `Forma de pagamento: ${cond.forma_pagamento || '-'}`,
+    `Prazo de pagamento: ${cond.prazo_pagamento || '-'}`,
+    `Saldo restante: ${moeda(cond.saldo_restante)}`,
+    `Tipo de entrega: ${cond.tipo_entrega || '-'}`,
+    `Endereco entrega: ${cond.endereco_entrega || '-'}`,
+    `Taxa entrega: ${moeda(cond.taxa_entrega)}`,
+    `Prazo entrega: ${cond.prazo_entrega || '-'}`,
+    `Responsavel entrega: ${cond.responsavel_entrega || '-'}`,
+    `Condicoes especificas: ${cond.condicoes_especificas || '-'}`,
+    '',
+    `Status do orcamento: ${d.statusOrcamento || 'Orçamento'}`,
+    `Status do item: ${item.status || 'Orçamento'}`,
+    `Produto: ${item.produto || ''}`,
+    `Categoria: ${item.categoria || ''}`,
+    `Quantidade: ${item.quantidade || ''}`,
+    `Prazo: ${item.prazo || ''}`,
+    `Fornecedor: ${item.fornecedor || ''}`,
+    '',
+    `Custo fornecedor: ${moeda(item.custo)}`,
+    `Preco de venda: ${moeda(item.venda)}`,
+    `Desconto do item: ${moeda(item.descontoItem)}`,
+    `Imposto estimado: ${moeda(c.imposto)}`,
+    `Lucro bruto: ${moeda(c.lucroBruto)}`,
+    `Lucro liquido: ${moeda(c.lucroLiquido)}`,
+    `Margem item: ${c.margem.toFixed(1)}%`,
+    `Entrada calculada: ${moeda(c.entrada)}`,
+    '',
+    'Observacao interna:',
+    item.obsInterna || '-',
+    ''
+  ].join('\n');
+}
+
+function atualizarControleInternoItem(item, idOrcamento){
+  if(!item.id_item) item.id_item = item.tmp_id || gerarId('ITEM');
+  const nome = nomeArquivoControleItem(item);
+  controleInternoTxt[item.id_item] = {
+    id_item: item.id_item,
+    id_orcamento: idOrcamento || orcamentoAtualId || '',
+    nome,
+    status: item.status || 'Orçamento',
+    atualizado_em: new Date().toISOString(),
+    conteudo: gerarConteudoControleItem(item, idOrcamento)
+  };
+  salvarControleInternoTxt();
+}
+
+function atualizarControleInternoTodos(idOrcamento){
+  itens.forEach(item => atualizarControleInternoItem(item, idOrcamento));
+}
+
+function atualizarStatusItem(indice, novoStatus){
+  const item = itens[indice];
+  if(!item) return;
+  item.status = novoStatus;
+  salvarItens();
+  atualizarControleInternoItem(item, orcamentoAtualId);
+  if(pastaControleHandle) salvarTxtNaPastaControle();
+  renderizar();
+}
+
+function adicionarItem(mostrarAlerta = true){
+  const isZap = fornecedorEhZapGrafica(val('fornecedor'));
+  const incluirGabaritagem = $('incluirGabaritagemZap')?.checked;
+  const incluirArte = isZap && $('incluirArteZap')?.checked;
+  const grupoZapId = gerarId('ZAP');
+  const item = {
+    tmp_id: gerarId('TMP'),
+    id_item: gerarId('ITEM'),
+    produto: val('produto').trim(),
+    categoria: val('categoria').trim(),
+    quantidade: val('quantidade').trim(),
+    prazo: val('prazo').trim(),
+    fornecedor: val('fornecedor').trim(),
+    custo: num('custo'),
+    venda: num('venda'),
+    entradaPct: num('entradaPct') || 50,
+    descontoItem: num('descontoItem'),
+    impostoItemPct: num('impostoItemPct'),
+    status: val('status'),
+    obsInterna: val('obsInterna').trim(),
+    grupo_zap_id: isZap ? grupoZapId : ''
+  };
+
+  if(!item.produto || !item.quantidade || item.venda <= 0){
+    if(mostrarAlerta) alert('Preencha pelo menos produto, quantidade e preço de venda.');
+    else alert('Para registrar o item na matriz, preencha produto, quantidade e preço de venda.');
+    return false;
+  }
+
+  if(isZap && !incluirGabaritagem){
+    alert('Fornecedor Zap Gráfica exige gabaritagem obrigatória de R$ 20,00. Registre essa condição para avançar.');
+    return false;
+  }
+
+  itens.push(item);
+  if(isZap){
+    itens.push(criarItemTecnicoZap({
+      grupoZapId,
+      produto:'Gabaritagem Zap Gráfica',
+      custo:20,
+      venda:20,
+      obsInterna:'Gabaritagem obrigatória para fornecedor Zap Gráfica',
+      itemOrigem:item.produto,
+      prazo:item.prazo,
+      status:item.status
+    }));
+    if(incluirArte){
+      itens.push(criarItemTecnicoZap({
+        grupoZapId,
+        produto:'Arte gráfica promocional',
+        custo:0,
+        venda:20,
+        obsInterna:'Arte promocional de abertura aplicada',
+        itemOrigem:item.produto,
+        prazo:item.prazo,
+        status:item.status
+      }));
+    }
+  }
+  orcamentoAtualId = '';
+  atualizarControleInternoTodos('');
+  limparFormularioItem();
+  salvarItens();
+  renderizar();
+  setStep(2);
+  return true;
+}
+
+function criarItemTecnicoZap({grupoZapId, produto, custo, venda, obsInterna, itemOrigem, prazo, status}){
+  return {
+    tmp_id: gerarId('TMP'),
+    id_item: gerarId('ITEM'),
+    produto,
+    categoria:'Serviço técnico',
+    quantidade:'1 serviço',
+    prazo: prazo || '',
+    fornecedor:'Interno/Zap Gráfica',
+    custo,
+    venda,
+    entradaPct:100,
+    descontoItem:0,
+    impostoItemPct:0,
+    status: status || 'Orçamento',
+    obsInterna: `${obsInterna}. Produto vinculado: ${itemOrigem || '-'}.`,
+    grupo_zap_id: grupoZapId,
+    item_tecnico_zap:true
+  };
+}
+
+function limparFormularioItem(){
+  ['produto','categoria','quantidade','prazo','fornecedor','custo','venda','obsInterna'].forEach(id => $(id).value = '');
+  $('entradaPct').value = 50;
+  $('descontoItem').value = 0;
+  $('impostoItemPct').value = 0;
+  $('status').value = 'Orçamento';
+  if($('incluirArteZap')) $('incluirArteZap').checked = false;
+  atualizarBlocoZap();
+}
+
+function removerItem(i){
+  const removido = itens[i];
+  itens.splice(i,1);
+  orcamentoAtualId = '';
+  if(removido?.id_item) delete controleInternoTxt[removido.id_item];
+  salvarItens();
+  salvarControleInternoTxt();
+  renderizar();
+}
+
+function limparItens(){
+  if(!confirm('Apagar os itens deste orçamento em aberto?')) return;
+  itens.forEach(item => {
+    if(item.id_item) delete controleInternoTxt[item.id_item];
+  });
+  itens = [];
+  orcamentoAtualId = '';
+  salvarItens();
+  salvarControleInternoTxt();
+  renderizar();
+}
+
+function calcularItem(item){
+  const venda = Number(item.venda || 0);
+  const custo = Number(item.custo || 0);
+  const desconto = Math.min(venda, Math.max(0, Number(item.descontoItem || 0)));
+  const vendaLiquida = Math.max(0, venda - desconto);
+  const imposto = vendaLiquida * (Math.max(0, Number(item.impostoItemPct || 0)) / 100);
+  const lucroBruto = vendaLiquida - custo;
+  const lucroLiquido = lucroBruto - imposto;
+  const margem = vendaLiquida > 0 ? (lucroLiquido / vendaLiquida) * 100 : 0;
+  const entrada = vendaLiquida * (Math.max(0, Number(item.entradaPct || 0)) / 100);
+  return {vendaLiquida, imposto, lucroBruto, lucroLiquido, margem, entrada, cobreCusto: entrada >= custo};
+}
+
+function statusClasse(item){
+  const c = calcularItem(item);
+  const custo = Number(item.custo || 0);
+  if(c.cobreCusto) return 'status-ok';
+  if(c.entrada >= custo * .8) return 'status-alert';
+  return 'status-risk';
+}
+
+function totais(){
+  const totalBruto = itens.reduce((s,i) => s + Number(i.venda || 0), 0);
+  const custoTotal = itens.reduce((s,i) => s + Number(i.custo || 0), 0);
+  const descontoItens = itens.reduce((s,i) => s + Math.max(0, Number(i.descontoItem || 0)), 0);
+  const descontoPct = Math.max(0, num('descontoPct'));
+  const descontoFixo = Math.max(0, num('descontoValor'));
+  const baseGlobal = Math.max(0, totalBruto - descontoItens);
+  const descontoGlobal = Math.min(baseGlobal, (baseGlobal * descontoPct / 100) + descontoFixo);
+  const descontoTotal = Math.min(totalBruto, descontoItens + descontoGlobal);
+  const valorFinal = Math.max(0, totalBruto - descontoTotal);
+  const impostoItens = itens.reduce((s,i) => s + calcularItem(i).imposto, 0);
+  const impostoGlobal = valorFinal * (Math.max(0, num('impostoPct')) / 100);
+  const impostosTotal = impostoItens + impostoGlobal;
+  const lucroLiquido = valorFinal - custoTotal - impostosTotal;
+  const margemLiquida = valorFinal > 0 ? lucroLiquido / valorFinal * 100 : 0;
+  const entradaMedia = itens.length ? itens.reduce((s,i) => s + calcularItem(i).entrada, 0) / itens.length : 0;
+  return {totalBruto,custoTotal,descontoItens,descontoGlobal,descontoTotal,valorFinal,impostosTotal,lucroLiquido,margemLiquida,entradaMedia};
+}
+
+function condicoesComerciais(t = totais()){
+  const percentualEntrada = Math.max(0, num('percentualEntrada'));
+  let valorEntrada = Math.max(0, num('valorEntrada'));
+
+  if(valorEntrada <= 0 && percentualEntrada > 0){
+    valorEntrada = t.valorFinal * (percentualEntrada / 100);
+  }
+
+  valorEntrada = Math.min(valorEntrada, t.valorFinal);
+  const saldoRestante = Math.max(0, t.valorFinal - valorEntrada);
+  setValorCampo('saldoRestante', moeda(saldoRestante));
+
+  return {
+    valor_entrada: valorEntrada,
+    percentual_entrada: percentualEntrada,
+    entrada_recebida: val('entradaRecebida') || 'Não',
+    data_recebimento_entrada: val('dataRecebimentoEntrada'),
+    forma_pagamento: val('formaPagamento').trim(),
+    prazo_pagamento: val('prazoPagamento').trim(),
+    saldo_restante: saldoRestante,
+    tipo_entrega: val('tipoEntrega'),
+    endereco_entrega: val('enderecoEntrega').trim(),
+    taxa_entrega: Math.max(0, num('taxaEntrega')),
+    prazo_entrega: val('prazoEntrega').trim(),
+    responsavel_entrega: val('responsavelEntrega').trim(),
+    condicoes_especificas: val('condicoesEspecificas').trim()
+  };
+}
+
+function dadosCabecalho(){
+  return {
+    emissorNome: val('emissorNome'), emissorCnpj: val('emissorCnpj'), emissorPix: val('emissorPix'), emissorTelefone: val('emissorTelefone'),
+    cliente: val('cliente').trim(), contatoCliente: val('contatoCliente').trim(), dataIso: val('data') || hojeISO(),
+    dataContratacao: val('dataContratacao'), prazoFinal: val('prazoFinal').trim(), statusOrcamento: val('statusOrcamento'),
+    obsCliente: val('obsCliente').trim()
+  };
+}
+
+function renderizarTabela(){
+  const el = $('tabelaEdicao');
+  if(!itens.length){ el.innerHTML = '<p class="small">Nenhum item adicionado.</p>'; return; }
+
+  let html = '<table><thead><tr><th>Produto</th><th>Qtd.</th><th>Status</th><th>Custo</th><th>Venda líquida</th><th>Imposto</th><th>Lucro</th><th>Margem</th><th>Entrada</th><th>Ação</th></tr></thead><tbody>';
+  itens.forEach((item,i) => {
+    const c = calcularItem(item);
+    const statusAtual = item.status || 'Orçamento';
+    html += `<tr class="${statusClasse(item)}">
+      <td><b>${escapeHtml(item.produto)}</b><br><span class="small">${escapeHtml(item.categoria || '-')} | ${escapeHtml(item.fornecedor || '-')}<br>${escapeHtml(item.obsInterna || '')}</span></td>
+      <td>${escapeHtml(item.quantidade)}</td>
+      <td><select onchange="atualizarStatusItem(${i}, this.value)">
+        ${['Orçamento','Pagamento','Produção','Entrega','Faturamento'].map(s => `<option ${s === statusAtual ? 'selected' : ''}>${s}</option>`).join('')}
+      </select></td>
+      <td class="money">${moeda(item.custo)}</td>
+      <td class="money">${moeda(c.vendaLiquida)}</td>
+      <td class="money">${moeda(c.imposto)}</td>
+      <td class="money">${moeda(c.lucroLiquido)}</td>
+      <td>${c.margem.toFixed(1)}%</td>
+      <td class="money">${moeda(c.entrada)}</td>
+      <td><button class="danger" onclick="removerItem(${i})">Remover</button></td>
+    </tr>`;
+  });
+  el.innerHTML = html + '</tbody></table>';
+}
+
+function atualizarResumo(){
+  const t = totais();
+  $('totalVendaText').textContent = moeda(t.totalBruto);
+  $('totalCustoText').textContent = moeda(t.custoTotal);
+  $('descontoTotalText').textContent = moeda(t.descontoTotal);
+  $('valorFinalText').textContent = moeda(t.valorFinal);
+  $('impostoTotalText').textContent = moeda(t.impostosTotal);
+  $('lucroLiquidoText').textContent = moeda(t.lucroLiquido);
+  $('margemLiquidaText').textContent = `${t.margemLiquida.toFixed(1)}%`;
+  $('entradaMediaText').textContent = moeda(t.entradaMedia);
+}
+
+function gerarDocumento(tipo){
+  const d = dadosCabecalho();
+  const t = totais();
+  const cond = condicoesComerciais(t);
+  const interno = tipo === 'interno';
+  let html = `<div class="doc-header">
+    <h2>${interno ? 'CONTROLE INTERNO DO ORÇAMENTO' : 'ORÇAMENTO COMERCIAL'}</h2>
+    <div>${escapeHtml(d.emissorNome)} &bull; CNPJ: ${escapeHtml(d.emissorCnpj)}<br>PIX: ${escapeHtml(d.emissorPix)} &bull; Tel: ${escapeHtml(d.emissorTelefone)}</div>
+  </div>
+  <div class="doc-info">
+    <div><b>Cliente:</b> ${escapeHtml(d.cliente)}<br><b>Contato:</b> ${escapeHtml(d.contatoCliente)}<br><b>Data:</b> ${escapeHtml(dataBR(d.dataIso))}</div>
+    <div>${interno ? '<b>Documento interno:</b> contém custos, impostos, margem e lucro.<br><b>Não enviar ao cliente.</b>' : '<b>Validade:</b> 7 dias<br><b>Condição:</b> sujeita à disponibilidade do fornecedor.'}</div>
+  </div>`;
+
+  html += `<table><thead><tr><th>Item</th><th>Quantidade</th><th>Valor</th><th>Prazo</th>${interno ? '<th>Fornecedor</th><th>Custo</th><th>Imposto</th><th>Lucro</th><th>Margem</th><th>Obs. interna</th>' : ''}</tr></thead><tbody>`;
+
+  if(!itens.length){
+    html += `<tr><td colspan="${interno ? 10 : 4}">Nenhum item adicionado.</td></tr>`;
+  }
+
+  itens.forEach(item => {
+    const c = calcularItem(item);
+    html += `<tr class="${interno ? statusClasse(item) : ''}">
+      <td>${escapeHtml(item.produto)}</td>
+      <td>${escapeHtml(item.quantidade)}</td>
+      <td class="money">${moeda(c.vendaLiquida)}</td>
+      <td>${escapeHtml(item.prazo || '-')}</td>`;
+    if(interno){
+      html += `<td>${escapeHtml(item.fornecedor || '-')}</td>
+      <td class="money">${moeda(item.custo)}</td>
+      <td class="money">${moeda(c.imposto)}</td>
+      <td class="money">${moeda(c.lucroLiquido)}</td>
+      <td>${c.margem.toFixed(1)}%</td>
+      <td>${escapeHtml(item.obsInterna || '-')}</td>`;
+    }
+    html += '</tr>';
+  });
+
+  html += `</tbody></table>
+  <div class="doc-total">
+    <b>Total bruto:</b> ${moeda(t.totalBruto)}<br>
+    <b>Desconto:</b> ${moeda(t.descontoTotal)}<br>
+    <b>Valor final:</b> ${moeda(t.valorFinal)}
+    ${interno ? `<br><b>Custo total:</b> ${moeda(t.custoTotal)}<br><b>Imposto estimado:</b> ${moeda(t.impostosTotal)}<br><b>Lucro líquido:</b> ${moeda(t.lucroLiquido)}<br><b>Margem líquida:</b> ${t.margemLiquida.toFixed(1)}%<br><b>Motivo do desconto:</b> ${escapeHtml(val('motivoDesconto') || '-')}` : ''}
+    ${d.prazoFinal ? `<br><b>Prazo final:</b> ${escapeHtml(d.prazoFinal)}` : ''}
+  </div>`;
+
+  html += `<div class="doc-total">
+    <b>Forma de pagamento:</b> ${escapeHtml(cond.forma_pagamento || '-')}<br>
+    <b>Entrada / sinal:</b> ${moeda(cond.valor_entrada)}${cond.percentual_entrada ? ` (${cond.percentual_entrada}%)` : ''}<br>
+    <b>Saldo restante:</b> ${moeda(cond.saldo_restante)}<br>
+    <b>Tipo de entrega:</b> ${escapeHtml(cond.tipo_entrega || '-')}<br>
+    <b>Prazo de entrega:</b> ${escapeHtml(cond.prazo_entrega || '-')}<br>
+    <b>Taxa de entrega:</b> ${moeda(cond.taxa_entrega)}
+    ${cond.condicoes_especificas ? `<br><b>Condição específica:</b> ${escapeHtml(cond.condicoes_especificas)}` : ''}
+    ${interno ? `<br><b>Entrada recebida:</b> ${escapeHtml(cond.entrada_recebida)}<br><b>Data recebimento entrada:</b> ${escapeHtml(dataBR(cond.data_recebimento_entrada) || '-')}<br><b>Prazo pagamento:</b> ${escapeHtml(cond.prazo_pagamento || '-')}<br><b>Endereço entrega:</b> ${escapeHtml(cond.endereco_entrega || '-')}<br><b>Responsável entrega:</b> ${escapeHtml(cond.responsavel_entrega || '-')}` : ''}
+  </div>`;
+
+  if(d.obsCliente) html += `<p><b>Observação:</b> ${escapeHtml(d.obsCliente)}</p>`;
+
+  html += `<p><b>Observações gerais</b></p>
+  <ul>
+    <li>Os prazos são contados em dias úteis após aprovação final da arte e confirmação do pagamento.</li>
+    <li>Arquivos enviados corretamente em PDF e aprovados até 12h podem entrar em produção no mesmo dia útil.</li>
+    <li>Aprovações após 12h podem iniciar produção apenas no próximo dia útil.</li>
+    <li>O prazo de transporte ou entrega não está incluído no prazo de produção informado.</li>
+    <li>Produtos sujeitos à disponibilidade e atualização de valores do fornecedor.</li>
+  </ul>`;
+
+  return html;
+}
+
+function renderizarDocumento(){
+  $('documento').innerHTML = gerarDocumento(modo);
+  $('nomeArquivoAtual').textContent = gerarNomeArquivo(modo);
+  $('ultimoRegistroText').textContent = orcamentoAtualId || 'ainda não salvo';
+}
+
+function mostrarCliente(){ modo = 'cliente'; salvarFormulario(); renderizarDocumento(); }
+function mostrarInterno(){ modo = 'interno'; salvarFormulario(); renderizarDocumento(); }
+
+function gerarNomeArquivo(tipo){
+  const d = dadosCabecalho();
+  const cliente = normalizar(d.cliente || 'cliente') || 'cliente';
+  return `${tipo === 'interno' ? 'controle_interno' : 'orcamento_cliente'}_${cliente}_${d.dataIso.replaceAll('-','')}.html`;
+}
+
+function estiloExportado(){
+  return `body{font-family:Arial,Helvetica,sans-serif;color:#1f211f;margin:24px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border:1px solid #ccc;text-align:left;vertical-align:top}th{background:#444b42;color:#fff}.doc-header{text-align:center;margin-bottom:20px}.doc-info{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;font-size:13px}.doc-total{margin:12px 0;padding:10px;background:#f7efe5;border:1px solid #ccc;border-radius:8px;font-size:13px}.small{font-size:12px;color:#5f6f5b}.money{white-space:nowrap}.status-ok{background:#e6f4ea}.status-alert{background:#fff4d6}.status-risk{background:#ffe6e6}@media(max-width:640px){body{margin:12px}.doc-info{grid-template-columns:1fr}table{font-size:12px}}@media print{@page{size:A4;margin:12mm}body{margin:0}th,.doc-total,.status-ok,.status-alert,.status-risk{-webkit-print-color-adjust:exact;print-color-adjust:exact}tr{page-break-inside:avoid}}`;
+}
+
+function baixarArquivo(nome, conteudo, tipo){
+  const blob = new Blob([conteudo], {type:tipo});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nome;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function checklistOrdemServico(){
+  return {
+    producao:[
+      'Conferir arquivos recebidos',
+      'Conferir medidas, sangria e margem de segurança',
+      'Conferir fornecedor e prazo combinado',
+      'Enviar/confirmar arquivo com fornecedor',
+      'Acompanhar status de produção'
+    ],
+    entrega:[
+      'Conferir material finalizado',
+      'Conferir quantidade',
+      'Separar comprovante/registro de entrega',
+      'Confirmar forma de entrega com cliente',
+      'Atualizar status após entrega'
+    ]
+  };
+}
+
+function dadosOrdemServico(){
+  if(itens.length) salvarOrcamentoAtual(false);
+  const d = dadosCabecalho();
+  const cond = condicoesComerciais();
+  const checklists = checklistOrdemServico();
+  return {
+    id_orcamento: orcamentoAtualId || 'orcamento_em_aberto',
+    cliente: d.cliente,
+    contato: d.contatoCliente,
+    data_orcamento: d.dataIso,
+    data_contratacao: d.dataContratacao,
+    status: d.statusOrcamento,
+    condicoes_pagamento:{
+      forma_pagamento: cond.forma_pagamento,
+      prazo_pagamento: cond.prazo_pagamento,
+      entrada: cond.valor_entrada,
+      saldo_restante: cond.saldo_restante
+    },
+    condicoes_entrega:{
+      tipo_entrega: cond.tipo_entrega,
+      endereco_entrega: cond.endereco_entrega,
+      taxa_entrega: cond.taxa_entrega,
+      prazo_entrega: cond.prazo_entrega,
+      responsavel_entrega: cond.responsavel_entrega
+    },
+    itens: itens.map(item => ({
+      produto:item.produto || '',
+      quantidade:item.quantidade || '',
+      fornecedor:item.fornecedor || '',
+      prazo:item.prazo || '',
+      status:item.status || 'Orçamento',
+      observacoes_internas:item.obsInterna || ''
+    })),
+    checklist_producao: checklists.producao,
+    checklist_entrega: checklists.entrega
+  };
+}
+
+function nomeBaseOrdemServico(os){
+  const id = normalizar(os.id_orcamento || 'orcamento_em_aberto') || 'orcamento_em_aberto';
+  const cliente = normalizar(os.cliente || 'cliente') || 'cliente';
+  return `ordem_servico_${id}_${cliente}`;
+}
+
+function nomePastaSeguro(nome){
+  return String(nome || 'sem_id').replace(/[<>:"/\\|?*]+/g,'_').trim() || 'sem_id';
+}
+
+function caminhoOrdemServico(os){
+  const data = os.data_orcamento || hojeISO();
+  return {
+    ano: data.slice(0,4) || 'sem_ano',
+    mes: data.slice(5,7) || 'sem_mes',
+    id: nomePastaSeguro(os.id_orcamento || 'orcamento_em_aberto')
+  };
+}
+
+function gerarOrdemServicoHtml(os){
+  let html = `<div class="doc-header">
+    <h2>ORDEM DE SERVIÇO</h2>
+    <div><b>ID orçamento:</b> ${escapeHtml(os.id_orcamento)}<br><b>Cliente:</b> ${escapeHtml(os.cliente)}<br><b>Contato:</b> ${escapeHtml(os.contato || '-')}<br><b>Data:</b> ${escapeHtml(dataBR(os.data_orcamento))}<br>${os.data_contratacao ? `<b>Data contratação:</b> ${escapeHtml(dataBR(os.data_contratacao))}<br>` : ''}<b>Status:</b> ${escapeHtml(os.status || '-')}</div>
+  </div>`;
+
+  html += '<table><thead><tr><th>Item</th><th>Quantidade</th><th>Fornecedor</th><th>Prazo</th><th>Status</th><th>Observações internas</th></tr></thead><tbody>';
+  if(!os.itens.length){
+    html += '<tr><td colspan="6">Nenhum item registrado.</td></tr>';
+  }
+  os.itens.forEach(item => {
+    html += `<tr>
+      <td>${escapeHtml(item.produto)}</td>
+      <td>${escapeHtml(item.quantidade)}</td>
+      <td>${escapeHtml(item.fornecedor || '-')}</td>
+      <td>${escapeHtml(item.prazo || '-')}</td>
+      <td>${escapeHtml(item.status || '-')}</td>
+      <td>${escapeHtml(item.observacoes_internas || '-')}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+
+  html += `<div class="doc-total">
+    <b>Condições de pagamento</b><br>
+    Forma: ${escapeHtml(os.condicoes_pagamento.forma_pagamento || '-')}<br>
+    Prazo: ${escapeHtml(os.condicoes_pagamento.prazo_pagamento || '-')}<br>
+    Entrada: ${moeda(os.condicoes_pagamento.entrada)}<br>
+    Saldo restante: ${moeda(os.condicoes_pagamento.saldo_restante)}
+  </div>`;
+
+  html += `<div class="doc-total">
+    <b>Condições de entrega</b><br>
+    Tipo: ${escapeHtml(os.condicoes_entrega.tipo_entrega || '-')}<br>
+    Endereço: ${escapeHtml(os.condicoes_entrega.endereco_entrega || '-')}<br>
+    Taxa: ${moeda(os.condicoes_entrega.taxa_entrega)}<br>
+    Prazo: ${escapeHtml(os.condicoes_entrega.prazo_entrega || '-')}<br>
+    Responsável: ${escapeHtml(os.condicoes_entrega.responsavel_entrega || '-')}
+  </div>`;
+
+  html += '<div class="doc-total"><b>Checklist de produção</b><br>' +
+    os.checklist_producao.map(item => `☐ ${escapeHtml(item)}`).join('<br>') +
+    '</div>';
+  html += '<div class="doc-total"><b>Checklist de entrega</b><br>' +
+    os.checklist_entrega.map(item => `☐ ${escapeHtml(item)}`).join('<br>') +
+    '</div>';
+  return html;
+}
+
+function gerarOrdemServicoTxt(os){
+  const linhas = [
+    'ORDEM DE SERVICO',
+    '',
+    `ID orcamento: ${os.id_orcamento}`,
+    `Cliente: ${os.cliente}`,
+    `Contato: ${os.contato || '-'}`,
+    `Data orcamento: ${dataBR(os.data_orcamento)}`,
+    `Data contratacao: ${dataBR(os.data_contratacao) || '-'}`,
+    `Status: ${os.status || '-'}`,
+    '',
+    'ITENS'
+  ];
+  os.itens.forEach((item, i) => {
+    linhas.push(
+      '',
+      `${i + 1}. ${item.produto}`,
+      `Quantidade: ${item.quantidade || '-'}`,
+      `Fornecedor: ${item.fornecedor || '-'}`,
+      `Prazo: ${item.prazo || '-'}`,
+      `Status: ${item.status || '-'}`,
+      `Observacoes internas: ${item.observacoes_internas || '-'}`
+    );
+  });
+  linhas.push(
+    '',
+    'CONDICOES DE PAGAMENTO',
+    `Forma: ${os.condicoes_pagamento.forma_pagamento || '-'}`,
+    `Prazo: ${os.condicoes_pagamento.prazo_pagamento || '-'}`,
+    `Entrada: ${moeda(os.condicoes_pagamento.entrada)}`,
+    `Saldo restante: ${moeda(os.condicoes_pagamento.saldo_restante)}`,
+    '',
+    'CONDICOES DE ENTREGA',
+    `Tipo: ${os.condicoes_entrega.tipo_entrega || '-'}`,
+    `Endereco: ${os.condicoes_entrega.endereco_entrega || '-'}`,
+    `Taxa: ${moeda(os.condicoes_entrega.taxa_entrega)}`,
+    `Prazo: ${os.condicoes_entrega.prazo_entrega || '-'}`,
+    `Responsavel: ${os.condicoes_entrega.responsavel_entrega || '-'}`
+  );
+  linhas.push('', 'CHECKLIST DE PRODUCAO');
+  os.checklist_producao.forEach(item => linhas.push(`[ ] ${item}`));
+  linhas.push('', 'CHECKLIST DE ENTREGA');
+  os.checklist_entrega.forEach(item => linhas.push(`[ ] ${item}`));
+  linhas.push('');
+  return linhas.join('\n');
+}
+
+function arquivosOrdemServico(){
+  if(!itens.length){
+    alert('Adicione pelo menos um item antes de gerar a ordem de serviço.');
+    return null;
+  }
+  const os = dadosOrdemServico();
+  const nome = nomeBaseOrdemServico(os);
+  const html = '<!DOCTYPE html>' +
+    '<html lang="pt-BR">' +
+    '<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+    '<title>' + escapeHtml(nome) + '</title><style>' + estiloExportado() + '<' + '/style><' + '/head>' +
+    '<body>' + gerarOrdemServicoHtml(os) + '<' + '/body><' + '/html>';
+  return {
+    os,
+    arquivos:[
+      {nome:'ordem_servico.txt', nomeDownload:`${caminhoOrdemServico(os).ano}_${caminhoOrdemServico(os).mes}_${caminhoOrdemServico(os).id}_ordem_servico.txt`, conteudo:gerarOrdemServicoTxt(os), tipo:'text/plain;charset=utf-8'},
+      {nome:'ordem_servico.html', nomeDownload:`${caminhoOrdemServico(os).ano}_${caminhoOrdemServico(os).mes}_${caminhoOrdemServico(os).id}_ordem_servico.html`, conteudo:html, tipo:'text/html;charset=utf-8'},
+      {nome:'ordem_servico.json', nomeDownload:`${caminhoOrdemServico(os).ano}_${caminhoOrdemServico(os).mes}_${caminhoOrdemServico(os).id}_ordem_servico.json`, conteudo:JSON.stringify(os,null,2), tipo:'application/json;charset=utf-8'}
+    ]
+  };
+}
+
+function baixarArquivosOrdemServico(pacote){
+  pacote.arquivos.forEach(arq => baixarArquivo(arq.nomeDownload || arq.nome, arq.conteudo, arq.tipo));
+}
+
+async function obterSubpasta(handle, nome){
+  return handle.getDirectoryHandle(nome, { create:true });
+}
+
+async function gerarOrdemServico(){
+  const pacote = arquivosOrdemServico();
+  if(!pacote) return;
+
+  if(!('showDirectoryPicker' in window)){
+    baixarArquivosOrdemServico(pacote);
+    $('ultimoRegistroText').textContent = pacote.os.id_orcamento;
+    alert(`Ordem de serviço gerada com sucesso para ${pacote.os.id_orcamento}`);
+    return;
+  }
+
+  try{
+    if(!pastaOrdemServicoHandle){
+      pastaOrdemServicoHandle = await window.showDirectoryPicker({ mode:'readwrite' });
+    }
+    const caminho = caminhoOrdemServico(pacote.os);
+    const raizHandle = await obterSubpasta(pastaOrdemServicoHandle, 'ordem_servico');
+    const anoHandle = await obterSubpasta(raizHandle, caminho.ano);
+    const mesHandle = await obterSubpasta(anoHandle, caminho.mes);
+    const idHandle = await obterSubpasta(mesHandle, caminho.id);
+
+    for(const arq of pacote.arquivos){
+      const handle = await idHandle.getFileHandle(arq.nome, { create:true });
+      const writable = await handle.createWritable();
+      await writable.write(arq.conteudo);
+      await writable.close();
+    }
+    $('ultimoRegistroText').textContent = pacote.os.id_orcamento;
+    alert(`Ordem de serviço gerada com sucesso para ${pacote.os.id_orcamento}`);
+  }catch(e){
+    if(e.name !== 'AbortError') alert('Não foi possível gerar a ordem de serviço.');
+  }
+}
+
+function baixarDocumento(tipo){
+  if(itens.length) salvarOrcamentoAtual(false);
+  const nome = gerarNomeArquivo(tipo);
+  const html = '<!DOCTYPE html>' +
+    '<html lang="pt-BR">' +
+    '<head>' +
+    '<meta charset="UTF-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+    '<title>' + escapeHtml(nome) + '</title>' +
+    '<style>' + estiloExportado() + '<' + '/style>' +
+    '<' + '/head>' +
+    '<body>' + gerarDocumento(tipo) + '<' + '/body>' +
+    '<' + '/html>';
+  baixarArquivo(nome, html, 'text/html;charset=utf-8');
+}
+
+function imprimirDocumento(){
+  if(itens.length) salvarOrcamentoAtual(false);
+  $('printDocument').innerHTML = gerarDocumento(modo);
+  requestAnimationFrame(() => window.print());
+}
+
+function salvarOrcamentoAtual(mostrarAviso){
+  if(!itens.length){
+    alert('Adicione pelo menos um item antes de salvar.');
+    return '';
+  }
+
+  const d = dadosCabecalho();
+  const t = totais();
+  const cond = condicoesComerciais(t);
+  const id = orcamentoAtualId || gerarId('ORC');
+  const data = d.dataIso;
+  const diasContratacao = diasEntre(data, d.dataContratacao);
+
+  banco.orcamentos = banco.orcamentos.filter(o => o.id_orcamento !== id);
+  banco.itens = banco.itens.filter(i => i.id_orcamento !== id);
+  banco.descontos = banco.descontos.filter(x => x.id_orcamento !== id);
+  banco.impostos = banco.impostos.filter(x => x.id_orcamento !== id);
+
+  banco.orcamentos.push({
+    id_orcamento:id,
+    data_orcamento:data,
+    semana:semanaISO(data),
+    mes:data.slice(0,7),
+    cliente:d.cliente,
+    contato:d.contatoCliente,
+    status:d.statusOrcamento,
+    data_contratacao:d.dataContratacao,
+    dias_ate_contratacao:diasContratacao,
+    total_bruto:t.totalBruto,
+    desconto_valor:t.descontoTotal,
+    desconto_percentual:num('descontoPct'),
+    motivo_desconto:val('motivoDesconto'),
+    total_final:t.valorFinal,
+    custo_total:t.custoTotal,
+    impostos_total:t.impostosTotal,
+    lucro_liquido:t.lucroLiquido,
+    margem_liquida:t.margemLiquida,
+    prazo_final:d.prazoFinal,
+    valor_entrada:cond.valor_entrada,
+    percentual_entrada:cond.percentual_entrada,
+    entrada_recebida:cond.entrada_recebida,
+    data_recebimento_entrada:cond.data_recebimento_entrada,
+    forma_pagamento:cond.forma_pagamento,
+    prazo_pagamento:cond.prazo_pagamento,
+    saldo_restante:cond.saldo_restante,
+    tipo_entrega:cond.tipo_entrega,
+    endereco_entrega:cond.endereco_entrega,
+    taxa_entrega:cond.taxa_entrega,
+    prazo_entrega:cond.prazo_entrega,
+    responsavel_entrega:cond.responsavel_entrega,
+    condicoes_especificas:cond.condicoes_especificas,
+    observacoes:d.obsCliente
+  });
+
+  itens.forEach(item => {
+    const c = calcularItem(item);
+    if(!item.id_item) item.id_item = item.tmp_id || gerarId('ITEM');
+    const idItem = item.id_item;
+    item.status = item.status || 'Orçamento';
+    atualizarControleInternoItem(item, id);
+    banco.itens.push({
+      id_item:idItem,
+      id_orcamento:id,
+      produto:item.produto,
+      categoria:item.categoria,
+      quantidade:item.quantidade,
+      fornecedor:item.fornecedor,
+      custo_fornecedor:item.custo,
+      preco_venda:item.venda,
+      desconto_item:item.descontoItem,
+      imposto_estimado:c.imposto,
+      lucro_bruto:c.lucroBruto,
+      lucro_liquido:c.lucroLiquido,
+      margem_item:c.margem,
+      status_item:item.status,
+      observacao_interna:item.obsInterna
+    });
+
+    if(Number(item.impostoItemPct || 0) > 0){
+      banco.impostos.push({
+        id_imposto:gerarId('IMP'),
+        id_orcamento:id,
+        id_item:idItem,
+        tipo_imposto:'estimado_item',
+        base_calculo:c.vendaLiquida,
+        aliquota:Number(item.impostoItemPct || 0),
+        valor:c.imposto,
+        observacoes:'Calculado no item'
+      });
+    }
+  });
+
+  if(num('impostoPct') > 0){
+    banco.impostos.push({
+      id_imposto:gerarId('IMP'),
+      id_orcamento:id,
+      id_item:'',
+      tipo_imposto:'estimado_global',
+      base_calculo:t.valorFinal,
+      aliquota:num('impostoPct'),
+      valor:t.valorFinal * (num('impostoPct') / 100),
+      observacoes:'Calculado no fechamento'
+    });
+  }
+
+  if(t.descontoTotal > 0){
+    banco.descontos.push({
+      id_desconto:gerarId('DESC'),
+      id_orcamento:id,
+      data,
+      valor:t.descontoTotal,
+      percentual:num('descontoPct'),
+      motivo:val('motivoDesconto') || 'sem motivo',
+      tipo_desconto:'item/global',
+      autorizado_por:val('emissorNome'),
+      observacoes:''
+    });
+  }
+
+  orcamentoAtualId = id;
+  atualizarControleInternoTodos(id);
+  recalcularClientes();
+  salvarBanco();
+  salvarFormulario();
+  renderizarDashboard();
+  renderizarDocumento();
+  if(pastaControleHandle) salvarTxtNaPastaControle();
+  if(mostrarAviso) alert(`Orçamento salvo no banco local: ${id}`);
+  return id;
+}
+
+function recalcularClientes(){
+  const mapa = {};
+  banco.orcamentos.forEach(o => {
+    const chave = normalizar(`${o.cliente}_${o.contato}`);
+    if(!mapa[chave]){
+      mapa[chave] = {
+        id_cliente:`CLI_${chave.toUpperCase().slice(0,48)}`,
+        nome:o.cliente,
+        telefone:o.contato,
+        total_orcamentos:0,
+        total_contratacoes:0,
+        total_gasto:0,
+        lucro_gerado:0,
+        ticket_medio:0,
+        tempo_medio_contratacao:'',
+        classificacao_cliente:'regular',
+        observacoes:`chave:${chave}`
+      };
+    }
+    const c = mapa[chave];
+    c.total_orcamentos += 1;
+    c.total_contratacoes += o.data_contratacao ? 1 : 0;
+    c.total_gasto += Number(o.total_final || 0);
+    c.lucro_gerado += Number(o.lucro_liquido || 0);
+  });
+
+  Object.values(mapa).forEach(c => {
+    c.ticket_medio = c.total_orcamentos ? c.total_gasto / c.total_orcamentos : 0;
+    const tempos = banco.orcamentos
+      .filter(o => normalizar(`${o.cliente}_${o.contato}`) === c.observacoes.replace('chave:','') && o.dias_ate_contratacao !== '')
+      .map(o => Number(o.dias_ate_contratacao));
+    c.tempo_medio_contratacao = tempos.length ? tempos.reduce((a,b)=>a+b,0) / tempos.length : '';
+    c.classificacao_cliente = c.total_gasto >= 1000 || c.lucro_gerado >= 400 ? 'alto valor' : c.total_contratacoes >= 2 ? 'recorrente' : 'regular';
+  });
+
+  banco.clientes = Object.values(mapa);
+}
+
+function agrupar(lista, chaveFn, valorFn){
+  return lista.reduce((acc,item) => {
+    const chave = chaveFn(item) || '-';
+    acc[chave] = (acc[chave] || 0) + Number(valorFn ? valorFn(item) : 1);
+    return acc;
+  }, {});
+}
+
+function maior(obj){
+  const e = Object.entries(obj).sort((a,b) => Number(b[1]) - Number(a[1]));
+  return e[0] || ['-',0];
+}
+
+function quantidadeNumerica(qtd){
+  const m = String(qtd || '').replace(',','.').match(/\d+(\.\d+)?/);
+  return m ? Number(m[0]) : 1;
+}
+
+function renderizarDashboard(){
+  const hoje = hojeISO();
+  const semana = semanaISO(hoje);
+  const mes = hoje.slice(0,7);
+  const orcs = banco.orcamentos;
+
+  const dia = orcs.filter(o => o.data_orcamento === hoje).length;
+  const sem = orcs.filter(o => o.semana === semana).length;
+  const men = orcs.filter(o => o.mes === mes).length;
+  const vendido = orcs.reduce((s,o) => s + Number(o.total_final || 0), 0);
+  const lucro = orcs.reduce((s,o) => s + Number(o.lucro_liquido || 0), 0);
+  const margem = vendido > 0 ? lucro / vendido * 100 : 0;
+  const [clienteTop] = maior(agrupar(orcs, o => o.cliente, o => o.total_final));
+  const [produtoTop] = maior(agrupar(banco.itens, i => i.produto, i => quantidadeNumerica(i.quantidade)));
+  const descontos = agrupar(banco.descontos, d => d.motivo || 'sem motivo', d => d.valor);
+
+  $('dashDia').textContent = dia;
+  $('dashSemana').textContent = sem;
+  $('dashMes').textContent = men;
+  $('dashTotalVendido').textContent = moeda(vendido);
+  $('dashLucro').textContent = moeda(lucro);
+  $('dashMargem').textContent = `${margem.toFixed(1)}%`;
+  $('dashCliente').textContent = clienteTop;
+  $('dashProduto').textContent = produtoTop;
+  $('dashDescontos').innerHTML = Object.keys(descontos).length ? Object.entries(descontos).map(([k,v]) => `${escapeHtml(k)}: <b>${moeda(v)}</b>`).join('<br>') : 'Nenhum desconto registrado.';
+  $('bancoStatusText').textContent = `Banco local: ${orcs.length} orçamento(s), ${banco.itens.length} item(ns), ${banco.clientes.length} cliente(s), ${Object.keys(controleInternoTxt).length} TXT interno(s).`;
+}
+
+function csvEscape(v){
+  const s = String(v ?? '');
+  return /[",\n;]/.test(s) ? `"${s.replaceAll('"','""')}"` : s;
+}
+
+function exportarAbaCsv(){
+  const aba = val('abaCsv');
+  const headers = schemas[aba];
+  const linhas = [headers.join(';')];
+  banco[aba].forEach(row => linhas.push(headers.map(h => csvEscape(row[h])).join(';')));
+  baixarArquivo(`${aba}_${hojeISO()}.csv`, linhas.join('\n'), 'text/csv;charset=utf-8');
+}
+
+function exportarBancoJson(){
+  const pacote = {exportado_em:new Date().toISOString(), schemas, dados:banco};
+  baixarArquivo(`matriz_orcamento_backup_${hojeISO()}.json`, JSON.stringify(pacote,null,2), 'application/json;charset=utf-8');
+}
+
+function caminhoControleInterno(idOrcamento){
+  const data = val('data') || hojeISO();
+  return {
+    ano: data.slice(0,4) || 'sem_ano',
+    mes: data.slice(5,7) || 'sem_mes',
+    id: nomePastaSeguro(idOrcamento || 'orcamento_em_aberto')
+  };
+}
+
+function prefixoControleInterno(caminho){
+  return `${caminho.ano}_${caminho.mes}_${caminho.id}`;
+}
+
+function gerarResumoControleInterno(idOrcamento){
+  const d = dadosCabecalho();
+  const t = totais();
+  return [
+    'CONTROLE INTERNO DO ORCAMENTO',
+    '',
+    `ID do orcamento: ${idOrcamento}`,
+    `Cliente: ${d.cliente}`,
+    `Contato: ${d.contatoCliente}`,
+    `Data do orcamento: ${dataBR(d.dataIso)}`,
+    `Status: ${d.statusOrcamento || 'Orçamento'}`,
+    '',
+    `Total de itens: ${itens.length}`,
+    `Total bruto: ${moeda(t.totalBruto)}`,
+    `Valor final: ${moeda(t.valorFinal)}`,
+    `Prazo final: ${d.prazoFinal || '-'}`,
+    '',
+    'ITENS',
+    ...itens.map((item, i) => `${i + 1}. ${item.produto || '-'} | ${item.quantidade || '-'} | ${item.fornecedor || '-'} | ${item.status || 'Orçamento'}`),
+    '',
+    'Observacoes:',
+    d.obsCliente || '-',
+    ''
+  ].join('\n');
+}
+
+function arquivosControleInterno(){
+  if(!itens.length){
+    alert('Adicione pelo menos um item antes de gerar o controle interno.');
+    return null;
+  }
+  if(!orcamentoAtualId) salvarOrcamentoAtual(false);
+  const id = orcamentoAtualId || gerarId('ORC');
+  orcamentoAtualId = id;
+  atualizarControleInternoTodos(id);
+  salvarFormulario();
+
+  const caminho = caminhoControleInterno(id);
+  const prefixo = prefixoControleInterno(caminho);
+  const itensArquivos = itens
+    .map(item => controleInternoTxt[item.id_item])
+    .filter(Boolean)
+    .map(arq => ({
+      nome: arq.nome,
+      nomeDownload: `${prefixo}_itens_${arq.nome}`,
+      conteudo: arq.conteudo,
+      tipo:'text/plain;charset=utf-8'
+    }));
+
+  return {
+    caminho,
+    resumo:{
+      nome:'controle_interno.txt',
+      nomeDownload:`${prefixo}_controle_interno.txt`,
+      conteudo:gerarResumoControleInterno(id),
+      tipo:'text/plain;charset=utf-8'
+    },
+    itens:itensArquivos
+  };
+}
+
+function exportarControleInternoTxt(){
+  const pacote = arquivosControleInterno();
+  if(!pacote) return;
+  baixarArquivo(pacote.resumo.nomeDownload, pacote.resumo.conteudo, pacote.resumo.tipo);
+  pacote.itens.forEach(arq => baixarArquivo(arq.nomeDownload, arq.conteudo, arq.tipo));
+}
+
+async function salvarTxtNaPastaControle(){
+  const pacote = arquivosControleInterno();
+  if(!pacote) return false;
+  if(!pastaControleHandle) return false;
+
+  const controleHandle = await obterSubpasta(pastaControleHandle, 'controle_interno');
+  const anoHandle = await obterSubpasta(controleHandle, pacote.caminho.ano);
+  const mesHandle = await obterSubpasta(anoHandle, pacote.caminho.mes);
+  const orcamentoHandle = await obterSubpasta(mesHandle, pacote.caminho.id);
+  const itensHandle = await obterSubpasta(orcamentoHandle, 'itens');
+  await obterSubpasta(orcamentoHandle, 'aprovacoes');
+  await obterSubpasta(orcamentoHandle, 'comprovantes');
+  await obterSubpasta(orcamentoHandle, 'arte');
+
+  const resumoHandle = await orcamentoHandle.getFileHandle(pacote.resumo.nome, { create:true });
+  const resumoWritable = await resumoHandle.createWritable();
+  await resumoWritable.write(pacote.resumo.conteudo);
+  await resumoWritable.close();
+
+  for(const arq of pacote.itens){
+    const handle = await itensHandle.getFileHandle(arq.nome, { create:true });
+    const writable = await handle.createWritable();
+    await writable.write(arq.conteudo);
+    await writable.close();
+  }
+  return true;
+}
+
+async function selecionarPastaControleInterno(){
+  if(!('showDirectoryPicker' in window)){
+    alert('Este navegador não permite salvar direto em pasta. Vou baixar os TXT para você mover para controle_interno.');
+    exportarControleInternoTxt();
+    return;
+  }
+
+  try{
+    pastaControleHandle = await window.showDirectoryPicker({ mode:'readwrite' });
+    const ok = await salvarTxtNaPastaControle();
+    if(ok) alert('TXT de controle interno salvos na pasta escolhida.');
+  }catch(e){
+    if(e.name !== 'AbortError') alert('Não foi possível salvar na pasta escolhida.');
+  }
+}
+
+async function selecionarPastaControleInterno(){
+  if(!('showDirectoryPicker' in window)){
+    alert('Este navegador nao permite salvar direto em pasta. Vou baixar os TXT com prefixo de ano, mes e orcamento.');
+    exportarControleInternoTxt();
+    return;
+  }
+
+  try{
+    pastaControleHandle = await window.showDirectoryPicker({ mode:'readwrite' });
+    const ok = await salvarTxtNaPastaControle();
+    if(ok) alert('TXT de controle interno salvos em controle_interno/ANO/MES/ID_ORCAMENTO/.');
+  }catch(e){
+    if(e.name !== 'AbortError') alert('Nao foi possivel salvar na pasta escolhida.');
+  }
+}
+
+function apagarBancoLocal(){
+  if(!confirm('Isto apaga apenas o banco local salvo neste navegador. Deseja continuar?')) return;
+  banco = {orcamentos:[],itens:[],clientes:[],descontos:[],impostos:[]};
+  controleInternoTxt = {};
+  orcamentoAtualId = '';
+  salvarBanco();
+  salvarControleInternoTxt();
+  salvarFormulario();
+  renderizar();
+}
+
+function carregarExemplo(){
+  itens = [
+    {id_item:gerarId('ITEM'),produto:'Mini Cartão Couchê 250g UV',categoria:'Impresso',quantidade:'500 unidades',prazo:'2 dias úteis',fornecedor:'Zap Gráfica',custo:46.99,venda:94.00,entradaPct:50,descontoItem:0,impostoItemPct:0,status:'Orçamento',obsInterna:'4x4, verniz UV total frente.'},
+    {id_item:gerarId('ITEM'),produto:'Designer Gráfico',categoria:'Serviço',quantidade:'1 arte',prazo:'1 dia útil',fornecedor:'Interno',custo:0,venda:40.00,entradaPct:50,descontoItem:0,impostoItemPct:0,status:'Orçamento',obsInterna:'Arte + adequação ao gabarito.'},
+    {id_item:gerarId('ITEM'),produto:'Taxa de Entrega',categoria:'Entrega',quantidade:'1 entrega',prazo:'A combinar',fornecedor:'Local',custo:0,venda:15.00,entradaPct:100,descontoItem:0,impostoItemPct:0,status:'Orçamento',obsInterna:'Taxa local informada ao cliente.'}
+  ];
+  orcamentoAtualId = '';
+  atualizarControleInternoTodos('');
+  salvarItens();
+  renderizar();
+  setStep(2);
+}
+
+function renderizar(){
+  renderizarTabela();
+  atualizarResumo();
+  renderizarDocumento();
+  renderizarDashboard();
+}
+
+function iniciar(){
+  carregarBanco();
+  carregarControleInternoTxt();
+  carregarFormulario();
+  carregarItens();
+  atualizarControleInternoTodos(orcamentoAtualId);
+  ativarPersistencia();
+  renderizar();
+  setStep(currentStep);
+}
+
+iniciar();
+</script>
+</body>
+</html>
