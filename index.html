@@ -509,6 +509,25 @@ function haRascunhoDeItem(){
     .some(id => String(val(id)).trim() !== '');
 }
 
+function garantirOrcamentoAtual(){
+  if(!itens.length){
+    alert('Adicione pelo menos um item antes de avançar para o fechamento.');
+    return false;
+  }
+
+  const idAntes = orcamentoAtualId;
+  const idSalvo = salvarOrcamentoAtual(false);
+  if(!idSalvo) return false;
+
+  // salvarOrcamentoAtual atualiza o registro existente quando idAntes já existe,
+  // evitando duplicatas e mantendo o mesmo ID no fechamento e nas exportações.
+  orcamentoAtualId = idAntes || idSalvo;
+  salvarFormulario();
+  renderizarDocumento();
+  atualizarTextoRegistroAtual(orcamentoAtualId);
+  return true;
+}
+
 function nextStep(){
   // Na etapa de itens, o usuário costuma preencher os campos e clicar em "Próximo".
   // Por isso, registramos o rascunho automaticamente antes de abrir a matriz.
@@ -516,6 +535,7 @@ function nextStep(){
     if(!adicionarItem(false)) return;
     return;
   }
+  if(currentStep === 3 && !garantirOrcamentoAtual()) return;
   setStep(currentStep + 1);
 }
 function prevStep(){ setStep(currentStep - 1); }
