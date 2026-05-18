@@ -1076,8 +1076,7 @@ function gerarConteudoControleItem(item, idOrcamento){
     `Produto: ${item.produto || ''}`,
     `Categoria: ${item.categoria || ''}`,
     `Quantidade: ${item.quantidade || ''}`,
-    `Prazo fornecedor: ${calcularPrazoComercial(item.prazo).prazo_fornecedor}`,
-    `Prazo comercial: ${calcularPrazoComercial(item.prazo).prazo_comercial}`,
+    `Prazo de producao: ${prazoProducaoItem(item)}`,
     `Fornecedor: ${item.fornecedor || ''}`,
     '',
     `Custo fornecedor: ${moeda(item.custo)}`,
@@ -1327,48 +1326,6 @@ function dadosCabecalho(){
   };
 }
 
-function calcularPrazoComercial(prazoFornecedor){
-  const textoOriginal = String(prazoFornecedor || '').trim();
-  const match = textoOriginal.replace(',','.').match(/\d+(\.\d+)?/);
-  if(match){
-    const diasFornecedor = Number(match[0]);
-    const diasComercial = Math.ceil(diasFornecedor * 2);
-    return {
-      diasFornecedor,
-      diasComercial,
-      prazo_fornecedor:textoOriginal || `${diasFornecedor} dias úteis`,
-      prazo_comercial:`${diasComercial} dias úteis`,
-      calculado:true
-    };
-  }
-
-  return {
-    diasFornecedor:null,
-    diasComercial:null,
-    prazo_fornecedor:textoOriginal || '-',
-    prazo_comercial:textoOriginal ? `${textoOriginal} - confirmar prazo` : 'confirmar prazo',
-    calculado:false
-  };
-}
-
-function prazoFinalComercialCalculado(){
-  const prazos = itens.map(item => calcularPrazoComercial(item.prazo));
-  const calculados = prazos.filter(p => Number.isFinite(p.diasComercial));
-  if(calculados.length){
-    const maior = Math.max(...calculados.map(p => p.diasComercial));
-    return {
-      prazo_calculado:`${maior} dias úteis`,
-      prazo_exibido:val('prazoFinal').trim() || `${maior} dias úteis`,
-      ajuste_manual:!!val('prazoFinal').trim()
-    };
-  }
-  return {
-    prazo_calculado:'confirmar prazo',
-    prazo_exibido:val('prazoFinal').trim() || 'confirmar prazo',
-    ajuste_manual:!!val('prazoFinal').trim()
-  };
-}
-
 function renderizarTabela(){
   const el = $('tabelaEdicao');
   if(!itens.length){ el.innerHTML = '<p class="small">Nenhum item adicionado.</p>'; return; }
@@ -1420,15 +1377,41 @@ function observacoesGeraisHtml(){
   </ul>`;
 }
 
-function prazoProducaoManual(){
-  return val('prazoFinal').trim() || '-';
+function formatarPrazoProducao(valor){
+  const texto = String(valor || '').trim();
+  if(!texto) return 'a confirmar';
+  const normalizado = texto.replace(',','.');
+  if(/^\d+(\.\d+)?$/.test(normalizado)){
+    const numero = Number(normalizado);
+    const exibido = Number.isInteger(numero) ? String(numero) : String(numero).replace('.', ',');
+    return `${exibido} dias úteis`;
+  }
+  return texto;
+}
+
+function prazoProducaoItem(item){
+  return formatarPrazoProducao(item?.prazo);
+}
+
+function prazoProducaoResumo(){
+  const prazosNumericos = itens
+    .map(item => String(item?.prazo || '').trim().replace(',','.').match(/\d+(\.\d+)?/))
+    .filter(Boolean)
+    .map(match => Number(match[0]));
+
+  if(prazosNumericos.length){
+    return formatarPrazoProducao(String(Math.max(...prazosNumericos)));
+  }
+
+  const primeiroPrazo = itens.map(item => String(item?.prazo || '').trim()).find(Boolean);
+  return primeiroPrazo ? formatarPrazoProducao(primeiroPrazo) : 'a confirmar';
 }
 
 function templateCliente(){
   const d = dadosCabecalho();
   const t = totais();
   const cond = condicoesComerciais(t);
-  const prazoProducao = prazoProducaoManual();
+  const prazoProducao = prazoProducaoResumo();
   let html = `<div class="pdf-brand-header">
     <img class="logo-orcamento" src="${escapeHtml(LOGO_APORE_SRC)}" alt="APORÉ imagem e som" onerror="this.style.display='none'">
     <h2 class="pdf-title">ORÇAMENTO COMERCIAL</h2>
@@ -1448,12 +1431,13 @@ function templateCliente(){
 
   itens.forEach((item, i) => {
     const c = calcularItem(item);
+    const prazoItem = prazoProducaoItem(item);
     html += `<tr>
       <td class="item-num">${i + 1}</td>
       <td>${escapeHtml(item.produto)}</td>
       <td>${escapeHtml(item.quantidade)}</td>
       <td class="money">${moeda(c.vendaLiquida)}</td>
-      <td>${escapeHtml(prazoProducao)}</td>
+      <td>${escapeHtml(prazoItem)}</td>
     </tr>`;
   });
 
@@ -1494,7 +1478,6 @@ function templateControleInterno(){
   const d = dadosCabecalho();
   const t = totais();
   const cond = condicoesComerciais(t);
-  const prazoComercialFinal = prazoFinalComercialCalculado();
   let html = `<div class="doc-header">
     ${BrandHeader({titulo:'CONTROLE INTERNO DO ORÇAMENTO', subtitulo:'APORÉ imagem e som', variacao:'print'})}
     <div>${escapeHtml(d.emissorNome)} &bull; CNPJ: ${escapeHtml(d.emissorCnpj)}<br>PIX: ${escapeHtml(d.emissorPix)} &bull; Tel: ${escapeHtml(d.emissorTelefone)}</div>
@@ -1504,20 +1487,19 @@ function templateControleInterno(){
     <div><b>Documento interno:</b> contém custos, reserva operacional, margem e lucro.<br><b>Não enviar ao cliente.</b></div>
   </div>`;
 
-  html += '<table><thead><tr><th class="item-num">#</th><th>Item</th><th>Quantidade</th><th>Valor</th><th>Prazo fornecedor</th><th>Prazo comercial</th><th>Fornecedor</th><th>Custo</th><th>Obs. interna</th></tr></thead><tbody>';
+  html += '<table><thead><tr><th class="item-num">#</th><th>Item</th><th>Quantidade</th><th>Valor</th><th>Prazo de produção</th><th>Fornecedor</th><th>Custo</th><th>Obs. interna</th></tr></thead><tbody>';
   if(!itens.length){
-    html += '<tr><td colspan="9">Nenhum item adicionado.</td></tr>';
+    html += '<tr><td colspan="8">Nenhum item adicionado.</td></tr>';
   }
   itens.forEach((item, i) => {
     const c = calcularItem(item);
-    const prazo = calcularPrazoComercial(item.prazo);
+    const prazoItem = prazoProducaoItem(item);
     html += `<tr class="${statusClasse(item)}">
       <td class="item-num">${i + 1}</td>
       <td>${escapeHtml(item.produto)}</td>
       <td>${escapeHtml(item.quantidade)}</td>
       <td class="money">${moeda(c.vendaLiquida)}</td>
-      <td>${escapeHtml(prazo.prazo_fornecedor)}</td>
-      <td>${escapeHtml(prazo.prazo_comercial)}</td>
+      <td>${escapeHtml(prazoItem)}</td>
       <td>${escapeHtml(item.fornecedor || '-')}</td>
       <td class="money">${moeda(item.custo)}</td>
       <td>${escapeHtml(item.obsInterna || '-')}</td>
@@ -1535,9 +1517,7 @@ function templateControleInterno(){
     <b>Reserva operacional valor:</b> ${moeda(t.reservaOperacionalValor)}<br>
     <b>Lucro líquido estimado:</b> ${moeda(t.lucroLiquido)}<br>
     <b>Motivo do desconto:</b> ${escapeHtml(val('motivoDesconto') || '-')}
-    <br><b>Prazo comercial calculado:</b> ${escapeHtml(prazoComercialFinal.prazo_calculado)}
-    <br><b>Prazo final exibido:</b> ${escapeHtml(prazoComercialFinal.prazo_exibido)}
-    <br><b>Observação de prazo:</b> ${prazoComercialFinal.ajuste_manual ? 'Prazo comercial ajustado manualmente.' : 'Prazo comercial calculado com margem de segurança 2x sobre fornecedor.'}
+    <br><b>Prazo de produção:</b> ${escapeHtml(prazoProducaoResumo())}
   </div>`;
 
   html += `<div class="doc-total">
@@ -1633,14 +1613,14 @@ function documentoHtmlCompleto(titulo, corpoHtml){
 }
 
 function linhasItensCliente(){
-  const prazoProducao = prazoProducaoManual();
   return itens.map((item, i) => {
     const c = calcularItem(item);
+    const prazoItem = prazoProducaoItem(item);
     return [
       `[${i + 1}] ${item.produto || '-'}`,
       `Quantidade: ${item.quantidade || '-'}`,
       `Valor: ${moeda(c.vendaLiquida)}`,
-      `Prazo de producao: ${prazoProducao}`
+      `Prazo de producao: ${prazoItem}`
     ].join('\n');
   });
 }
@@ -1649,7 +1629,7 @@ function gerarOrcamentoClienteTxt(){
   const d = dadosCabecalho();
   const t = totais();
   const cond = condicoesComerciais(t);
-  const prazoProducao = prazoProducaoManual();
+  const prazoProducao = prazoProducaoResumo();
   return [
     'ORCAMENTO COMERCIAL',
     '',
@@ -1691,14 +1671,14 @@ function dadosOrcamentoClienteJson(){
   const d = dadosCabecalho();
   const t = totais();
   const cond = condicoesComerciais(t);
-  const prazoProducao = prazoProducaoManual();
+  const prazoProducao = prazoProducaoResumo();
   return {
     id_orcamento:orcamentoAtualId,
     cliente:d.cliente,
     contato:d.contatoCliente,
     data_orcamento:d.dataIso,
     prazo_producao:prazoProducao,
-    itens:itens.map(item => ({produto:item.produto || '', quantidade:item.quantidade || '', prazo:prazoProducao, valor:calcularItem(item).vendaLiquida})),
+    itens:itens.map(item => ({produto:item.produto || '', quantidade:item.quantidade || '', prazo:prazoProducaoItem(item), valor:calcularItem(item).vendaLiquida})),
     total_bruto:t.totalBruto,
     desconto:t.descontoTotal,
     total_final:t.valorFinal,
@@ -1816,7 +1796,7 @@ function dadosOrdemServico(){
       categoria:item.categoria || '',
       quantidade:item.quantidade || '',
       fornecedor:item.fornecedor || '',
-      prazo:item.prazo || '',
+      prazo:prazoProducaoItem(item),
       status:item.status || 'Orçamento',
       especificacoes_tecnicas:item.obsInterna || '',
       observacoes_producao:item.obsInterna || ''
@@ -2186,7 +2166,7 @@ function exportarBancoJson(){
 function gerarResumoControleInterno(idOrcamento){
   const d = dadosCabecalho();
   const t = totais();
-  const prazoComercialFinal = prazoFinalComercialCalculado();
+  const prazoProducao = prazoProducaoResumo();
   return [
     'CONTROLE INTERNO DO ORCAMENTO',
     '',
@@ -2205,14 +2185,11 @@ function gerarResumoControleInterno(idOrcamento){
     `Reserva operacional valor: ${moeda(t.reservaOperacionalValor)}`,
     `Lucro liquido estimado: ${moeda(t.lucroLiquido)}`,
     `Margem aplicada: ${t.margemLiquida.toFixed(1)}%`,
-    `Prazo comercial calculado: ${prazoComercialFinal.prazo_calculado}`,
-    `Prazo final exibido: ${prazoComercialFinal.prazo_exibido}`,
-    `Observacao de prazo: ${prazoComercialFinal.ajuste_manual ? 'Prazo comercial ajustado manualmente.' : 'Prazo comercial calculado com margem de seguranca 2x sobre fornecedor.'}`,
+    `Prazo de producao: ${prazoProducao}`,
     '',
     'ITENS',
     ...itens.map((item, i) => {
-      const prazo = calcularPrazoComercial(item.prazo);
-      return `[${i + 1}] ${item.produto || '-'} | ${item.quantidade || '-'} | prazo_fornecedor: ${prazo.prazo_fornecedor} | prazo_comercial: ${prazo.prazo_comercial} | ${item.fornecedor || '-'} | ${item.status || 'Orçamento'}`;
+      return `[${i + 1}] ${item.produto || '-'} | ${item.quantidade || '-'} | prazo_producao: ${prazoProducaoItem(item)} | ${item.fornecedor || '-'} | ${item.status || 'Orçamento'}`;
     }),
     '',
     'Observacoes:',
