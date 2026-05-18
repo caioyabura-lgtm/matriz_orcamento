@@ -55,6 +55,9 @@
     .danger{background:var(--apore-berry);color:#fff}
     .primary:hover:not(:disabled),.secondary:hover:not(:disabled),.success:hover:not(:disabled),.danger:hover:not(:disabled){background:var(--bluegreen);color:#fff}
     table{width:100%;border-collapse:collapse;font-size:13px;background:var(--bg);color:var(--text)}
+    .client-items{width:100%}
+    .client-items th{background:var(--apore-graphite);color:var(--muted);text-align:left;padding:9px;border:1px solid var(--apore-graphite)}
+    .client-items td:nth-child(2),.client-items td:nth-child(3),.client-items td:nth-child(4){font-weight:600}
     th{background:var(--apore-graphite);color:var(--muted);text-align:left;padding:9px;border:1px solid var(--apore-graphite)}
     td{padding:8px;border:1px solid var(--line);vertical-align:top}
     .item-num{width:38px;text-align:center;white-space:nowrap}
@@ -1374,14 +1377,14 @@ function gerarDocumento(tipo){
 function regrasArtePrazoHtml(){
   return `<div class="doc-total">
     <b>Regra de arte e prazo</b><br>
-    Entrada de 50% para início da preparação da arte.<br>
-    Preparação da arte em até 24h após confirmação da entrada.<br>
-    Inclui até 2 modificações sem custo.<br>
-    A partir da 3ª modificação: R$ 15,00 por alteração.<br>
-    Produção inicia após aprovação final da arte.<br>
-    Os prazos são contados em dias úteis após aprovação final da arte e confirmação do pagamento.<br>
-    Arquivos enviados corretamente em PDF e aprovados até 12h podem entrar em produção no mesmo dia útil.<br>
-    Aprovações após 12h podem iniciar produção apenas no próximo dia útil.
+    • Entrada de 50% para início da preparação da arte.<br>
+    • A preparação inicial da arte ocorre em até 24h após a confirmação da entrada.<br>
+    • O orçamento inclui até 2 alterações sem custo adicional.<br>
+    • A partir da 3ª alteração será cobrada taxa de R$ 15,00 por modificação.<br>
+    • A produção é iniciada somente após a aprovação final da arte.<br>
+    • Os prazos são contados em dias úteis após aprovação final e confirmação do pagamento.<br>
+    • Arquivos enviados corretamente em PDF e aprovados até 12h podem entrar em produção no mesmo dia útil.<br>
+    • Aprovações realizadas após 12h poderão iniciar produção no próximo dia útil.
   </div>`;
 }
 
@@ -1434,24 +1437,22 @@ function templateCliente(){
   </div>
   <div class="doc-info">
     <div><b>Cliente:</b> ${escapeHtml(d.cliente)}<br><b>Contato:</b> ${escapeHtml(d.contatoCliente)}</div>
-    <div><b>Validade:</b> 7 dias<br><b>Prazo de produção:</b> ${escapeHtml(prazoProducao)}</div>
+    <div><b>Validade:</b> 7 dias</div>
   </div>`;
 
-  html += '<table><thead><tr><th class="item-num">#</th><th>Item</th><th>Quantidade</th><th>Valor</th><th>Prazo de produção</th></tr></thead><tbody>';
+  html += '<table class="client-items"><thead><tr><th class="item-num">#</th><th>Item</th><th>Quantidade</th><th>Valor</th></tr></thead><tbody>';
 
   if(!itens.length){
-    html += '<tr><td colspan="5">Nenhum item adicionado.</td></tr>';
+    html += '<tr><td colspan="4">Nenhum item adicionado.</td></tr>';
   }
 
   itens.forEach((item, i) => {
     const c = calcularItem(item);
-    const prazoItem = prazoProducaoItem(item);
     html += `<tr>
       <td class="item-num">${i + 1}</td>
       <td>${escapeHtml(item.produto)}</td>
       <td>${escapeHtml(item.quantidade)}</td>
       <td class="money">${moeda(c.vendaLiquida)}</td>
-      <td>${escapeHtml(prazoItem)}</td>
     </tr>`;
   });
 
