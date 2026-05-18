@@ -78,9 +78,9 @@
     .doc-header{text-align:center;margin-bottom:20px}
     .doc-header h2{margin:0 0 8px;font-size:20px}
     .pdf-brand-header{text-align:center;margin:0 0 18px;padding:0;color:#242322;break-inside:avoid;page-break-inside:avoid}
-    .logo-orcamento{display:block;width:min(100%,260px);max-height:280px;object-fit:contain;margin:0 auto 8px;opacity:.94}
-    .pdf-title{margin:0;color:#171716;font-size:21px;font-weight:800;letter-spacing:.04em;text-align:center;line-height:1.15}
-    .pdf-subtitle{margin:4px 0 12px;color:#767069;font-size:12px;font-weight:400;text-align:center}
+    .logo-orcamento{display:block;width:min(100%,260px);max-height:280px;object-fit:contain;margin:0 auto 2px;opacity:.94}
+    .pdf-title{margin:0;color:#171716;font-size:21px;font-weight:800;letter-spacing:.04em;text-align:center;line-height:1.08}
+    .pdf-subtitle{margin:2px 0 10px;color:#767069;font-size:12px;font-weight:400;text-align:center}
     .pdf-emitter{color:#242322;font-size:12px;line-height:1.45;text-align:center}
     .doc-info{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;font-size:13px}
     .doc-total{margin:12px 0;padding:10px;background:#fbf4ec;border:1px solid #d7c3b4;border-radius:8px;font-size:13px;color:#242322}
@@ -241,7 +241,7 @@
         <div><label>Reserva operacional (%)</label><input id="reservaOperacionalPct" type="text" inputmode="decimal" value="15"></div>
       </div>
       <div class="grid">
-        <div><label>Prazo final (ajuste manual opcional)</label><input id="prazoFinal" placeholder="Ex: 14 dias úteis"></div>
+        <div><label>Prazo de produção</label><input id="prazoFinal" placeholder="Ex: 14 dias úteis após aprovação final da arte."></div>
         <div><label>Observação para o cliente</label><textarea id="obsCliente" placeholder="Ex: pagamento de 50% na aprovação, saldo na entrega..."></textarea></div>
       </div>
       <div class="summary-grid">
@@ -1417,15 +1417,18 @@ function observacoesGeraisHtml(){
     <li>Os prazos são contados em dias úteis após aprovação final da arte e confirmação do pagamento.</li>
     <li>Arquivos enviados corretamente em PDF e aprovados até 12h podem entrar em produção no mesmo dia útil.</li>
     <li>Aprovações após 12h podem iniciar produção apenas no próximo dia útil.</li>
-    <li>O prazo de transporte ou entrega não está incluído no prazo de produção informado.</li>
   </ul>`;
+}
+
+function prazoProducaoManual(){
+  return val('prazoFinal').trim() || '-';
 }
 
 function templateCliente(){
   const d = dadosCabecalho();
   const t = totais();
   const cond = condicoesComerciais(t);
-  const prazoComercialFinal = prazoFinalComercialCalculado();
+  const prazoProducao = prazoProducaoManual();
   let html = `<div class="pdf-brand-header">
     <img class="logo-orcamento" src="${escapeHtml(LOGO_APORE_SRC)}" alt="APORÉ imagem e som" onerror="this.style.display='none'">
     <h2 class="pdf-title">ORÇAMENTO COMERCIAL</h2>
@@ -1434,10 +1437,10 @@ function templateCliente(){
   </div>
   <div class="doc-info">
     <div><b>Cliente:</b> ${escapeHtml(d.cliente)}<br><b>Contato:</b> ${escapeHtml(d.contatoCliente)}</div>
-    <div><b>Validade:</b> 7 dias<br><b>Prazo comercial estimado:</b> ${escapeHtml(prazoComercialFinal.prazo_exibido)} após aprovação final da arte.</div>
+    <div><b>Validade:</b> 7 dias<br><b>Prazo de produção:</b> ${escapeHtml(prazoProducao)}</div>
   </div>`;
 
-  html += '<table><thead><tr><th class="item-num">#</th><th>Item</th><th>Quantidade</th><th>Valor</th><th>Prazo comercial</th></tr></thead><tbody>';
+  html += '<table><thead><tr><th class="item-num">#</th><th>Item</th><th>Quantidade</th><th>Valor</th><th>Prazo de produção</th></tr></thead><tbody>';
 
   if(!itens.length){
     html += '<tr><td colspan="5">Nenhum item adicionado.</td></tr>';
@@ -1445,13 +1448,12 @@ function templateCliente(){
 
   itens.forEach((item, i) => {
     const c = calcularItem(item);
-    const prazo = calcularPrazoComercial(item.prazo);
     html += `<tr>
       <td class="item-num">${i + 1}</td>
       <td>${escapeHtml(item.produto)}</td>
       <td>${escapeHtml(item.quantidade)}</td>
       <td class="money">${moeda(c.vendaLiquida)}</td>
-      <td>${escapeHtml(prazo.prazo_comercial)}</td>
+      <td>${escapeHtml(prazoProducao)}</td>
     </tr>`;
   });
 
@@ -1460,7 +1462,7 @@ function templateCliente(){
     <b>Total bruto:</b> ${moeda(t.totalBruto)}<br>
     <b>Desconto:</b> ${moeda(t.descontoTotal)}<br>
     <b>Valor final:</b> ${moeda(t.valorFinal)}
-    <br><b>Prazo comercial estimado:</b> ${escapeHtml(prazoComercialFinal.prazo_exibido)} após aprovação final da arte
+    <br><b>Prazo de produção:</b> ${escapeHtml(prazoProducao)}
   </div>`;
 
   html += `<div class="doc-total">
@@ -1469,8 +1471,7 @@ function templateCliente(){
     Preparação da arte em até 24h após confirmação da entrada.<br>
     Inclui até 2 modificações sem custo.<br>
     A partir da 3ª modificação: R$ 15,00 por alteração.<br>
-    Produção inicia após aprovação final da arte.<br>
-    O prazo informado já inclui margem operacional de segurança.
+    Produção inicia após aprovação final da arte.
   </div>`;
 
   html += `<div class="doc-total">
@@ -1594,7 +1595,7 @@ function gerarNomeArquivo(tipo){
 }
 
 function estiloExportado(){
-  return `body{font-family:Inter,"Segoe UI",Roboto,Arial,Helvetica,sans-serif;color:#242322;margin:24px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border:1px solid #d7c3b4;text-align:left;vertical-align:top}th{background:#505844;color:#fff}.item-num{width:38px;text-align:center;white-space:nowrap}.doc-header{text-align:center;margin-bottom:20px}.pdf-brand-header{text-align:center;margin:0 0 18px;padding:0;color:#242322;break-inside:avoid;page-break-inside:avoid}.logo-orcamento{display:block;width:min(100%,260px);max-height:280px;object-fit:contain;margin:0 auto 8px;opacity:.94}.pdf-title{margin:0;color:#171716;font-size:21px;font-weight:800;letter-spacing:.04em;text-align:center;line-height:1.15}.pdf-subtitle{margin:4px 0 12px;color:#767069;font-size:12px;font-weight:400;text-align:center}.pdf-emitter{color:#242322;font-size:12px;line-height:1.45;text-align:center}.doc-info{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;font-size:13px}.doc-total{margin:12px 0;padding:10px;background:#fbf4ec;border:1px solid #d7c3b4;border-radius:8px;font-size:13px}.small{font-size:12px;color:#767069}.money{white-space:nowrap}.status-ok{background:#edf3e7}.status-alert{background:#fff3df}.status-risk{background:#f7dfe7}.brand-header{display:flex;align-items:center;gap:12px}.brand-header.print{justify-content:center;flex-direction:column;gap:8px;margin-bottom:16px}.brand-logo{display:block;object-fit:contain;max-width:100%;height:auto}.brand-logo.print{width:150px;max-height:92px}.brand-logo.compact{width:48px;max-height:30px}.brand-copy h2{margin:0;color:#171716;letter-spacing:0}.brand-copy p{margin:4px 0 0;color:#767069;font-size:12px}.brand-footer{margin-top:22px;padding-top:10px;border-top:1px solid #d7c3b4;text-align:center;color:#767069;font-size:11px}.brand-footer img{width:48px;max-height:30px;object-fit:contain;opacity:.78;margin-bottom:4px}@media(max-width:640px){body{margin:12px}.doc-info{grid-template-columns:1fr}.logo-orcamento{width:min(100%,220px);max-height:240px}table{font-size:12px}}@media print{@page{size:A4;margin:12mm}body{margin:0}th,.doc-total,.status-ok,.status-alert,.status-risk{-webkit-print-color-adjust:exact;print-color-adjust:exact}tr{page-break-inside:avoid}.brand-logo.print{width:122px;max-height:76px}.logo-orcamento{width:230px;max-height:250px;opacity:.94}}`;
+  return `body{font-family:Inter,"Segoe UI",Roboto,Arial,Helvetica,sans-serif;color:#242322;margin:24px;line-height:1.45}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border:1px solid #d7c3b4;text-align:left;vertical-align:top}th{background:#505844;color:#fff}.item-num{width:38px;text-align:center;white-space:nowrap}.doc-header{text-align:center;margin-bottom:20px}.pdf-brand-header{text-align:center;margin:0 0 18px;padding:0;color:#242322;break-inside:avoid;page-break-inside:avoid}.logo-orcamento{display:block;width:min(100%,260px);max-height:280px;object-fit:contain;margin:0 auto 2px;opacity:.94}.pdf-title{margin:0;color:#171716;font-size:21px;font-weight:800;letter-spacing:.04em;text-align:center;line-height:1.08}.pdf-subtitle{margin:2px 0 10px;color:#767069;font-size:12px;font-weight:400;text-align:center}.pdf-emitter{color:#242322;font-size:12px;line-height:1.45;text-align:center}.doc-info{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;font-size:13px}.doc-total{margin:12px 0;padding:10px;background:#fbf4ec;border:1px solid #d7c3b4;border-radius:8px;font-size:13px}.small{font-size:12px;color:#767069}.money{white-space:nowrap}.status-ok{background:#edf3e7}.status-alert{background:#fff3df}.status-risk{background:#f7dfe7}.brand-header{display:flex;align-items:center;gap:12px}.brand-header.print{justify-content:center;flex-direction:column;gap:8px;margin-bottom:16px}.brand-logo{display:block;object-fit:contain;max-width:100%;height:auto}.brand-logo.print{width:150px;max-height:92px}.brand-logo.compact{width:48px;max-height:30px}.brand-copy h2{margin:0;color:#171716;letter-spacing:0}.brand-copy p{margin:4px 0 0;color:#767069;font-size:12px}.brand-footer{margin-top:22px;padding-top:10px;border-top:1px solid #d7c3b4;text-align:center;color:#767069;font-size:11px}.brand-footer img{width:48px;max-height:30px;object-fit:contain;opacity:.78;margin-bottom:4px}@media(max-width:640px){body{margin:12px}.doc-info{grid-template-columns:1fr}.logo-orcamento{width:min(100%,220px);max-height:240px}table{font-size:12px}}@media print{@page{size:A4;margin:12mm}body{margin:0}th,.doc-total,.status-ok,.status-alert,.status-risk{-webkit-print-color-adjust:exact;print-color-adjust:exact}tr{page-break-inside:avoid}.brand-logo.print{width:122px;max-height:76px}.logo-orcamento{width:230px;max-height:250px;opacity:.94}}`;
 }
 
 function baixarArquivo(nome, conteudo, tipo){
@@ -1632,14 +1633,14 @@ function documentoHtmlCompleto(titulo, corpoHtml){
 }
 
 function linhasItensCliente(){
+  const prazoProducao = prazoProducaoManual();
   return itens.map((item, i) => {
     const c = calcularItem(item);
-    const prazo = calcularPrazoComercial(item.prazo);
     return [
       `[${i + 1}] ${item.produto || '-'}`,
       `Quantidade: ${item.quantidade || '-'}`,
       `Valor: ${moeda(c.vendaLiquida)}`,
-      `Prazo comercial: ${prazo.prazo_comercial}`
+      `Prazo de producao: ${prazoProducao}`
     ].join('\n');
   });
 }
@@ -1648,7 +1649,7 @@ function gerarOrcamentoClienteTxt(){
   const d = dadosCabecalho();
   const t = totais();
   const cond = condicoesComerciais(t);
-  const prazoComercialFinal = prazoFinalComercialCalculado();
+  const prazoProducao = prazoProducaoManual();
   return [
     'ORCAMENTO COMERCIAL',
     '',
@@ -1656,6 +1657,7 @@ function gerarOrcamentoClienteTxt(){
     `Cliente: ${d.cliente}`,
     `Contato: ${d.contatoCliente}`,
     `Data: ${dataBR(d.dataIso)}`,
+    `Prazo de producao: ${prazoProducao}`,
     '',
     'ITENS',
     ...linhasItensCliente(),
@@ -1663,7 +1665,7 @@ function gerarOrcamentoClienteTxt(){
     `Total bruto: ${moeda(t.totalBruto)}`,
     `Desconto: ${moeda(t.descontoTotal)}`,
     `Valor final: ${moeda(t.valorFinal)}`,
-    `Prazo comercial estimado: ${prazoComercialFinal.prazo_exibido} apos aprovacao final da arte`,
+    `Prazo de producao: ${prazoProducao}`,
     '',
     'REGRA DE ARTE E PRAZO',
     'Entrada de 50% para inicio da preparacao da arte.',
@@ -1671,7 +1673,6 @@ function gerarOrcamentoClienteTxt(){
     'Inclui ate 2 modificacoes sem custo.',
     'A partir da 3a modificacao: R$ 15,00 por alteracao.',
     'Producao inicia apos aprovacao final da arte.',
-    'O prazo informado ja inclui margem operacional de seguranca.',
     '',
     'CONDICOES',
     `Forma de pagamento: ${cond.forma_pagamento || '-'}`,
@@ -1690,16 +1691,18 @@ function dadosOrcamentoClienteJson(){
   const d = dadosCabecalho();
   const t = totais();
   const cond = condicoesComerciais(t);
+  const prazoProducao = prazoProducaoManual();
   return {
     id_orcamento:orcamentoAtualId,
     cliente:d.cliente,
     contato:d.contatoCliente,
     data_orcamento:d.dataIso,
-    itens:itens.map(item => ({produto:item.produto || '', quantidade:item.quantidade || '', prazo:item.prazo || '', valor:calcularItem(item).vendaLiquida})),
+    prazo_producao:prazoProducao,
+    itens:itens.map(item => ({produto:item.produto || '', quantidade:item.quantidade || '', prazo:prazoProducao, valor:calcularItem(item).vendaLiquida})),
     total_bruto:t.totalBruto,
     desconto:t.descontoTotal,
     total_final:t.valorFinal,
-    prazo_final:d.prazoFinal,
+    prazo_final:prazoProducao,
     condicoes:{forma_pagamento:cond.forma_pagamento, entrada:cond.valor_entrada, saldo_restante:cond.saldo_restante, tipo_entrega:cond.tipo_entrega, prazo_entrega:cond.prazo_entrega, taxa_entrega:cond.taxa_entrega},
     observacoes:d.obsCliente
   };
