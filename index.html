@@ -420,7 +420,7 @@ const PREFIXOS_DOCUMENTOS = {
 
 const schemas = {
   orcamentos: ['id_orcamento','data_orcamento','semana','mes','cliente','contato','status','data_contratacao','dias_ate_contratacao','total_bruto','desconto_valor','desconto_percentual','motivo_desconto','total_final','custo_total','reserva_operacional_percentual','reserva_operacional_valor','lucro_liquido','margem_liquida','prazo_final','valor_entrada','percentual_entrada','entrada_recebida','data_recebimento_entrada','forma_pagamento','prazo_pagamento','saldo_restante','tipo_entrega','endereco_entrega','taxa_entrega','prazo_entrega','responsavel_entrega','condicoes_especificas','observacoes_cliente','observacoes_internas'],
-  itens: ['id_item','id_orcamento','produto','categoria','quantidade','fornecedor','custo_fornecedor','preco_venda','desconto_item','imposto_estimado','lucro_bruto','lucro_liquido','margem_item','status_item','observacao_interna'],
+  itens: ['id_item','id_orcamento','produto','categoria','quantidade','prazo','fornecedor','custo_fornecedor','preco_venda','desconto_item','imposto_estimado','lucro_bruto','lucro_liquido','margem_item','status_item','observacao_interna'],
   clientes: ['id_cliente','nome','telefone','total_orcamentos','total_contratacoes','total_gasto','lucro_gerado','ticket_medio','tempo_medio_contratacao','classificacao_cliente','observacoes'],
   descontos: ['id_desconto','id_orcamento','data','valor','percentual','motivo','tipo_desconto','autorizado_por','observacoes'],
   produtos: ['id_produto','nome','categoria','observacoes'],
@@ -754,6 +754,25 @@ function normalizarOrcamentoRemoto(o){
   };
 }
 
+function normalizarItemRemoto(item){
+  return {
+    id_item:item?.id_item ?? item?.item ?? item?.id ?? gerarId('ITEM'),
+    tmp_id:item?.tmp_id ?? '',
+    produto:item?.produto ?? '',
+    categoria:item?.categoria ?? '',
+    quantidade:item?.quantidade ?? '',
+    prazo:item?.prazo ?? '',
+    fornecedor:item?.fornecedor ?? '',
+    custo:numeroValor(item?.custo_fornecedor ?? item?.custo ?? 0),
+    venda:numeroValor(item?.preco_venda ?? item?.venda ?? item?.valor ?? 0),
+    entradaPct:numeroValor(item?.entradaPct ?? item?.entrada_pct ?? 50) || 50,
+    descontoItem:numeroValor(item?.desconto_item ?? item?.descontoItem ?? 0),
+    impostoItemPct:numeroValor(item?.impostoItemPct ?? item?.imposto_item_pct ?? 0),
+    status:item?.status_item ?? item?.status ?? 'OrÃ§amento',
+    obsInterna:item?.observacao_interna ?? item?.obsInterna ?? ''
+  };
+}
+
 function extrairListaOrcamentosRemotos(resposta){
   if(Array.isArray(resposta)) return resposta;
   if(Array.isArray(resposta?.orcamentos)) return resposta.orcamentos;
@@ -762,6 +781,15 @@ function extrairListaOrcamentosRemotos(resposta){
   if(Array.isArray(resposta?.data)) return resposta.data;
   if(Array.isArray(resposta?.resultado)) return resposta.resultado;
   return [];
+}
+
+function extrairDetalheOrcamentoRemoto(resposta, fallback){
+  const dados = resposta?.dados || resposta?.data || resposta?.resultado || resposta || {};
+  return {
+    orcamento:normalizarOrcamentoRemoto(dados.orcamento || dados.orcamentos || fallback || {}),
+    itens:Array.isArray(dados.itens) ? dados.itens.map(normalizarItemRemoto) : [],
+    condicoes_comerciais:dados.condicoes_comerciais || dados.condicoes || {}
+  };
 }
 
 function setStatusOrcamentosRemotos(texto){
@@ -831,7 +859,64 @@ function renderizarOrcamentosRemotos(){
   }).join('');
 }
 
-function selecionarOrcamentoRemoto(indiceFiltrado){
+async function buscarOrcamentoRemotoDetalhado(idOrcamento){
+  const resp = await fetch(`${APPS_SCRIPT_URL}?acao=buscar_orcamento&id_orcamento=${encodeURIComponent(idOrcamento)}`);
+  if(!resp.ok) throw new Error('Resposta invÃ¡lida da planilha');
+  const json = await resp.json();
+  if(json?.ok === false || json?.erro) throw new Error(json.erro || 'NÃ£o foi possÃ­vel buscar o orÃ§amento');
+  return json;
+}
+
+function aplicarCondicoesComerciaisRemotas(cond){
+  if(!cond) return;
+  setValorCampo('valorEntrada', cond.valor_entrada_base ?? cond.valor_entrada ?? '');
+  setValorCampo('percentualEntrada', cond.percentual_entrada ?? '');
+  setSelectValor('entradaRecebida', cond.entrada_recebida || 'NÃ£o');
+  setValorCampo('dataRecebimentoEntrada', dataISOEntrada(cond.data_recebimento_entrada || ''));
+  setValorCampo('formaPagamento', cond.forma_pagamento || '');
+  setValorCampo('prazoPagamento', cond.prazo_pagamento || '');
+  setSelectValor('tipoEntrega', cond.tipo_entrega || 'Retirada');
+  setValorCampo('enderecoEntrega', cond.endereco_entrega || '');
+  setValorCampo('taxaEntrega', cond.taxa_entrega ?? 0);
+  setValorCampo('prazoEntrega', cond.prazo_entrega || '');
+  setValorCampo('responsavelEntrega', cond.responsavel_entrega || '');
+  setValorCampo('condicoesEspecificas', cond.condicoes_especificas || '');
+}
+
+function aplicarOrcamentoRemotoDetalhado(detalhe, indiceOriginal, indiceFiltrado){
+  const orcamento = detalhe.orcamento || {};
+  orcamentoAtualId = orcamento.id_orcamento || '';
+  setValorCampo('cliente', orcamento.cliente || '');
+  setValorCampo('contatoCliente', orcamento.contato || '');
+  if(orcamento.data_orcamento) setValorCampo('data', orcamento.data_orcamento);
+  if(orcamento.status) setSelectValor('statusOrcamento', orcamento.status);
+  if(orcamento.data_contratacao) setValorCampo('dataContratacao', dataISOEntrada(orcamento.data_contratacao));
+  setValorCampo('descontoPct', orcamento.desconto_percentual ?? '');
+  setValorCampo('descontoValor', orcamento.desconto_valor ?? '');
+  setValorCampo('motivoDesconto', orcamento.motivo_desconto || '');
+  setValorCampo('reservaOperacionalPct', orcamento.reserva_operacional_percentual ?? RESERVA_OPERACIONAL_PERCENTUAL_PADRAO);
+  setValorCampo('prazoFinal', orcamento.prazo_final || '');
+  setValorCampo('obsCliente', orcamento.observacoes_cliente || orcamento.observacoes || '');
+  aplicarCondicoesComerciaisRemotas(detalhe.condicoes_comerciais);
+
+  if(detalhe.itens.length){
+    itens = detalhe.itens.map(item => ({
+      ...item,
+      status: String(item.status || '').includes('Ã') ? 'Or\u00e7amento' : (item.status || 'Or\u00e7amento')
+    }));
+    salvarItens();
+    salvarOrcamentoAtual(false);
+  }else{
+    salvarFormulario();
+  }
+
+  const codigo = `ORC${String((indiceOriginal >= 0 ? indiceOriginal : indiceFiltrado) + 1).padStart(3,'0')}`;
+  atualizarTextoRegistroAtual(`Or\u00e7amento carregado da planilha para edi\u00e7\u00e3o: ${codigo}`);
+  setStatusOrcamentosRemotos('Or\u00e7amento carregado da planilha para edi\u00e7\u00e3o.');
+  renderizar();
+}
+
+async function selecionarOrcamentoRemoto(indiceFiltrado){
   const termo = normalizar(val('buscaOrcamentoRemoto'));
   const filtrados = orcamentosRemotos.filter(o => {
     if(!termo) return true;
@@ -852,6 +937,29 @@ function selecionarOrcamentoRemoto(indiceFiltrado){
   setStatusOrcamentosRemotos(`Orçamento selecionado para fechamento: ${codigo}`);
   renderizar();
 }
+
+async function selecionarOrcamentoRemotoDetalhado(indiceFiltrado){
+  const termo = normalizar(val('buscaOrcamentoRemoto'));
+  const filtrados = orcamentosRemotos.filter(o => {
+    if(!termo) return true;
+    return normalizar(textoOrcamentoRemoto(o, ['id_orcamento','cliente','contato','status'])).includes(termo);
+  });
+  const orcamento = filtrados[indiceFiltrado];
+  if(!orcamento) return;
+
+  const indiceOriginal = orcamentosRemotos.findIndex(ref => ref === orcamento);
+  setStatusOrcamentosRemotos('Buscando itens e condicoes comerciais na planilha...');
+  try{
+    const resposta = await buscarOrcamentoRemotoDetalhado(orcamento.id_orcamento);
+    const detalhe = extrairDetalheOrcamentoRemoto(resposta, orcamento);
+    aplicarOrcamentoRemotoDetalhado(detalhe, indiceOriginal, indiceFiltrado);
+  }catch(e){
+    console.error('Erro ao carregar orcamento remoto:', e);
+    setStatusOrcamentosRemotos('Nao foi possivel carregar os itens deste orcamento da planilha.');
+  }
+}
+
+selecionarOrcamentoRemoto = selecionarOrcamentoRemotoDetalhado;
 
 function montarPayloadOrcamentoSheets(){
   const d = dadosCabecalho();
@@ -905,6 +1013,10 @@ function montarPayloadOrcamentoSheets(){
         custo_fornecedor:Number(item.custo || 0),
         preco_venda:Number(item.venda || 0),
         desconto_item:Number(item.descontoItem || 0),
+        imposto_estimado:c.imposto,
+        lucro_bruto:c.lucroBruto,
+        lucro_liquido:c.lucroLiquido,
+        margem_item:c.margem,
         venda_liquida:c.vendaLiquida,
         status_item:item.status || 'Orçamento',
         observacao_interna:item.obsInterna || ''
@@ -1127,6 +1239,17 @@ function atualizarStatusItem(indice, novoStatus){
   renderizar();
 }
 
+function atualizarObsInternaItem(indice, novaObservacao){
+  const item = itens[indice];
+  if(!item) return;
+  item.obsInterna = String(novaObservacao ?? '');
+  if(!item.id_item) item.id_item = item.tmp_id || gerarId('ITEM');
+  salvarItens();
+  atualizarControleInternoItem(item, orcamentoAtualId);
+  if(orcamentoAtualId) salvarOrcamentoAtual(false);
+  renderizar();
+}
+
 function adicionarItem(mostrarAlerta = true){
   const isZap = fornecedorEhZapGrafica(val('fornecedor'));
   const incluirGabaritagem = $('incluirGabaritagemZap')?.checked;
@@ -1341,7 +1464,7 @@ function renderizarTabela(){
     const c = calcularItem(item);
     const statusAtual = item.status || 'Orçamento';
     html += `<tr class="${statusClasse(item)}">
-      <td><b>${escapeHtml(item.produto)}</b><br><span class="small">${escapeHtml(item.categoria || '-')} | ${escapeHtml(item.fornecedor || '-')}<br>${escapeHtml(item.obsInterna || '')}</span></td>
+      <td><b>${escapeHtml(item.produto)}</b><br><span class="small">${escapeHtml(item.categoria || '-')} | ${escapeHtml(item.fornecedor || '-')}</span><textarea rows="2" onchange="atualizarObsInternaItem(${i}, this.value)">${escapeHtml(item.obsInterna || '')}</textarea></td>
       <td>${escapeHtml(item.quantidade)}</td>
       <td><select onchange="atualizarStatusItem(${i}, this.value)">
         ${['Orçamento','Pagamento','Produção','Entrega','Faturamento'].map(s => `<option ${s === statusAtual ? 'selected' : ''}>${s}</option>`).join('')}
@@ -2000,6 +2123,7 @@ function salvarOrcamentoAtual(mostrarAviso){
       produto:item.produto,
       categoria:item.categoria,
       quantidade:item.quantidade,
+      prazo:item.prazo,
       fornecedor:item.fornecedor,
       custo_fornecedor:item.custo,
       preco_venda:item.venda,
